@@ -1,8 +1,7 @@
 """
-Document Ingestion Service using PyMuPDF.
+Document Ingestion Service using PyMuPDF and the dedicated Metadata Service.
 Extracts SHA-256 hash, PDF metadata, signature presence, page text, and word bounding boxes.
 """
-import hashlib
 import os
 import uuid
 from datetime import datetime, timezone
@@ -16,12 +15,7 @@ from backend.models import (
     PageData,
     ExtractedWord
 )
-
-def compute_sha256(data: bytes) -> str:
-    """Compute SHA-256 hash of binary content."""
-    hasher = hashlib.sha256()
-    hasher.update(data)
-    return hasher.hexdigest()
+from backend.metadata.service import extract_pdf_metadata, compute_sha256
 
 def detect_document_type(full_text: str) -> DocumentType:
     """Classify document type based on structural headers and content tokens."""
@@ -41,41 +35,21 @@ def detect_document_type(full_text: str) -> DocumentType:
 
 def extract_pdf_data(file_bytes: bytes, filename: str, application_id: str, storage_path: str) -> Tuple[DocumentRecord, List[PageData]]:
     """
-    Ingest a PDF file using PyMuPDF.
+    Ingest a PDF file using PyMuPDF and the dedicated metadata service.
     Calculates SHA-256, extracts metadata, checks signatures, extracts text and word bboxes.
     """
-    sha256_hash = compute_sha256(file_bytes)
+    # 1. Dedicated metadata extraction
+    doc_metadata = extract_pdf_metadata(file_bytes, filename)
+    sha256_hash = doc_metadata.sha256_hash or compute_sha256(file_bytes)
     
-    # Save file to storage path
+    # 2. Persist binary to storage path
     os.makedirs(os.path.dirname(storage_path), exist_ok=True)
     with open(storage_path, "wb") as f:
         f.write(file_bytes)
 
+    # 3. Extract page text and word bounding coordinates
     doc = pymupdf.open(stream=file_bytes, filetype="pdf")
     page_count = doc.page_count
-    meta_dict = doc.metadata or {}
-
-    # Check for digital signature presence
-    # PyMuPDF sigflags: 1 means document has signatures, 2 means signatures contain doc-level permissions
-    sigflags = 0
-    is_signed = False
-    try:
-        sigflags = doc.get_sigflags()
-        is_signed = (sigflags > 0)
-    except Exception:
-        is_signed = False
-
-    doc_metadata = DocumentMetadata(
-        title=meta_dict.get("title") or filename,
-        author=meta_dict.get("author"),
-        creator=meta_dict.get("creator"),
-        producer=meta_dict.get("producer"),
-        creation_date=meta_dict.get("creationDate"),
-        mod_date=meta_dict.get("modDate"),
-        is_signed=is_signed,
-        signature_details={"sigflags": sigflags} if is_signed else None
-    )
-
     pages: List[PageData] = []
     full_text = []
 

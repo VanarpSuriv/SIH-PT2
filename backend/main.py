@@ -8,6 +8,7 @@ import json
 import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
+from pydantic import BaseModel
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -20,6 +21,11 @@ from backend.models import (
     Finding,
     FindingStatus,
     Severity,
+    RuleCategory,
+    FindingLifecycle,
+    ReviewDecision,
+    HumanReviewDecision,
+    MetadataEvidenceContext,
     ApplicationCase,
     VerificationResult,
     VerificationStatus
@@ -292,8 +298,10 @@ def render_evidence_highlight_image(finding_id: str, field_idx: int = Query(0)):
             rect = pymupdf.Rect(bbox[0] - pad, bbox[1] - pad, bbox[2] + pad, bbox[3] + pad)
             annot = page.add_rect_annot(rect)
             
-            # Severity color
-            if finding.severity == Severity.CRITICAL or finding.status == FindingStatus.FAIL:
+            # Severity / Category color
+            if finding.rule_category == RuleCategory.METADATA_INTEGRITY:
+                annot.set_colors(stroke=(0.85, 0.45, 0.1), fill=(1.0, 0.95, 0.85))
+            elif finding.severity == Severity.CRITICAL or finding.status == FindingStatus.FAIL:
                 annot.set_colors(stroke=(0.85, 0.15, 0.15), fill=(1.0, 0.85, 0.85))
             else:
                 annot.set_colors(stroke=(0.15, 0.55, 0.25), fill=(0.85, 0.95, 0.85))
@@ -301,6 +309,16 @@ def render_evidence_highlight_image(finding_id: str, field_idx: int = Query(0)):
             annot.set_border(width=2.0)
             annot.set_opacity(0.4)
             annot.update()
+
+        # If metadata finding, add advisory header banner to page rendering
+        if finding.metadata_context:
+            banner_rect = pymupdf.Rect(20, 15, page.rect.width - 20, 60)
+            page.draw_rect(banner_rect, color=(0.85, 0.45, 0.1), fill=(1.0, 0.96, 0.90), width=1.5)
+            banner_text = (
+                f"[ METADATA FORENSIC CONTEXT ] Rule: {finding.rule_id} ({finding.rule_name})\n"
+                f"Advisory: Flagged for technical review; does not constitute proof of document forgery."
+            )
+            page.insert_textbox(banner_rect, banner_text, fontsize=8.5, color=(0.45, 0.2, 0.05), align=pymupdf.TEXT_ALIGN_CENTER)
 
         pix = page.get_pixmap(dpi=130)
         img_bytes = pix.tobytes("png")
@@ -323,6 +341,59 @@ def _generate_placeholder_image(message: str) -> bytes:
     doc.close()
     return b
 
+class ReviewRequest(BaseModel):
+    decision: ReviewDecision
+    reviewer_notes: str = ""
+    reviewer_id: str = "OFFICER-AICTE-01"
+
+@app.post("/api/findings/{finding_id}/review")
+def submit_review_decision(finding_id: str, req: ReviewRequest):
+    """
+    Submit structured human reviewer decision on a finding.
+    Separates finding lifecycle, issuer-verification status, and reviewer decision.
+    """
+    finding = findings_db.get(finding_id)
+    if not finding:
+        raise HTTPException(status_code=404, detail="Finding not found.")
+
+    finding.review.decision = req.decision
+    finding.review.reviewer_notes = req.reviewer_notes
+    finding.review.reviewed_by = req.reviewer_id
+    finding.review.reviewer_id = req.reviewer_id
+    finding.review.reviewed_at = datetime.now(timezone.utc).isoformat()
+    finding.review.decided_at = finding.review.reviewed_at
+
+    if req.decision in (ReviewDecision.CONFIRMED_DEFECT, ReviewDecision.DISMISSED_BENIGN):
+        finding.lifecycle = FindingLifecycle.RESOLVED
+        finding.user_status = "CONFIRMED" if req.decision == ReviewDecision.CONFIRMED_DEFECT else "DISMISSED"
+    elif req.decision == ReviewDecision.REQUEST_CLARIFICATION:
+        finding.lifecycle = FindingLifecycle.IN_REVIEW
+        finding.user_status = "IN_REVIEW"
+    else:
+        finding.lifecycle = FindingLifecycle.OPEN
+        finding.user_status = "UNREVIEWED"
+
+    event = audit_trail.log_event(
+        application_id=finding.application_id,
+        action="FINDING_REVIEWED",
+        payload={
+            "finding_id": finding.id,
+            "rule_id": finding.rule_id,
+            "claim": finding.claim,
+            "decision": req.decision.value,
+            "lifecycle": finding.lifecycle.value,
+            "reviewer_notes": req.reviewer_notes,
+            "reviewed_by": req.reviewer_id
+        }
+    )
+    return {
+        "status": "success",
+        "finding_id": finding.id,
+        "decision": req.decision.value,
+        "lifecycle": finding.lifecycle.value,
+        "audit_event_id": event.id
+    }
+
 @app.post("/api/findings/{finding_id}/confirm")
 def confirm_finding(finding_id: str, reviewer_notes: str = Form("")):
     """Reviewer confirms the flagged finding as an authentic violation."""
@@ -330,7 +401,12 @@ def confirm_finding(finding_id: str, reviewer_notes: str = Form("")):
     if not finding:
         raise HTTPException(status_code=404, detail="Finding not found.")
 
+    finding.review.decision = ReviewDecision.CONFIRMED_DEFECT
+    finding.review.reviewer_notes = reviewer_notes
+    finding.review.reviewed_at = datetime.now(timezone.utc).isoformat()
+    finding.lifecycle = FindingLifecycle.RESOLVED
     finding.user_status = "CONFIRMED"
+
     event = audit_trail.log_event(
         application_id=finding.application_id,
         action="FINDING_CONFIRMED",
@@ -338,6 +414,8 @@ def confirm_finding(finding_id: str, reviewer_notes: str = Form("")):
             "finding_id": finding.id,
             "rule_id": finding.rule_id,
             "claim": finding.claim,
+            "decision": ReviewDecision.CONFIRMED_DEFECT.value,
+            "lifecycle": FindingLifecycle.RESOLVED.value,
             "reviewer_notes": reviewer_notes
         }
     )
@@ -350,7 +428,12 @@ def dismiss_finding(finding_id: str, reviewer_notes: str = Form("")):
     if not finding:
         raise HTTPException(status_code=404, detail="Finding not found.")
 
+    finding.review.decision = ReviewDecision.DISMISSED_BENIGN
+    finding.review.reviewer_notes = reviewer_notes
+    finding.review.reviewed_at = datetime.now(timezone.utc).isoformat()
+    finding.lifecycle = FindingLifecycle.RESOLVED
     finding.user_status = "DISMISSED"
+
     event = audit_trail.log_event(
         application_id=finding.application_id,
         action="FINDING_DISMISSED",
@@ -358,6 +441,8 @@ def dismiss_finding(finding_id: str, reviewer_notes: str = Form("")):
             "finding_id": finding.id,
             "rule_id": finding.rule_id,
             "claim": finding.claim,
+            "decision": ReviewDecision.DISMISSED_BENIGN.value,
+            "lifecycle": FindingLifecycle.RESOLVED.value,
             "reviewer_notes": reviewer_notes
         }
     )

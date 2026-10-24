@@ -1,3 +1,8 @@
+"""
+Data models and schemas for the AICTE EoA Document Verification Platform.
+Includes document metadata, extraction coordinates, findings with separated lifecycles,
+external verification results, and cryptographic audit log entries.
+"""
 import sys
 from datetime import datetime, timezone
 from enum import Enum
@@ -25,6 +30,17 @@ class FindingStatus(str, Enum):
     FLAGGED = "FLAGGED"
     MANUAL_REVIEW = "MANUAL_REVIEW"
 
+class RuleCategory(str, Enum):
+    STATUTORY_MANDATE = "STATUTORY_MANDATE"
+    TECHNICAL_CONSISTENCY = "TECHNICAL_CONSISTENCY"
+    METADATA_INTEGRITY = "METADATA_INTEGRITY"
+
+class FindingLifecycle(str, Enum):
+    OPEN = "OPEN"
+    IN_REVIEW = "IN_REVIEW"
+    RESOLVED = "RESOLVED"
+    CLOSED = "CLOSED"
+
 class VerificationStatus(str, Enum):
     VERIFIED = "verified"
     MISMATCH = "mismatch"
@@ -32,6 +48,21 @@ class VerificationStatus(str, Enum):
     PENDING = "pending"
     SOURCE_UNAVAILABLE = "source unavailable"
     MANUAL_REVIEW = "manual review"
+    NOT_APPLICABLE = "not applicable"
+
+class ReviewDecision(str, Enum):
+    UNREVIEWED = "UNREVIEWED"
+    CONFIRMED_DEFECT = "CONFIRMED_DEFECT"
+    DISMISSED_BENIGN = "DISMISSED_BENIGN"
+    REQUEST_CLARIFICATION = "REQUEST_CLARIFICATION"
+
+class HumanReviewDecision(BaseModel):
+    decision: ReviewDecision = ReviewDecision.UNREVIEWED
+    reviewer_id: Optional[str] = None
+    reviewed_by: Optional[str] = None
+    reviewer_notes: Optional[str] = None
+    decided_at: Optional[str] = None
+    reviewed_at: Optional[str] = None
 
 class BoundingBox(BaseModel):
     x0: float
@@ -58,8 +89,18 @@ class DocumentMetadata(BaseModel):
     author: Optional[str] = None
     creator: Optional[str] = None
     producer: Optional[str] = None
-    creation_date: Optional[str] = None
-    mod_date: Optional[str] = None
+    raw_creation_date: Optional[str] = None
+    normalized_creation_date: Optional[str] = None
+    raw_mod_date: Optional[str] = None
+    normalized_mod_date: Optional[str] = None
+    creation_date: Optional[str] = None # Normalized ISO timestamp for backward compatibility
+    mod_date: Optional[str] = None # Normalized ISO timestamp for backward compatibility
+    pdf_version: Optional[str] = None
+    is_encrypted: bool = False
+    page_count: int = 1
+    sha256_hash: str = ""
+    parsing_warnings: List[str] = Field(default_factory=list)
+    metadata_anomalies: List[str] = Field(default_factory=list)
     is_signed: bool = False
     signature_details: Optional[Dict[str, Any]] = None
 
@@ -92,19 +133,32 @@ class VerificationResult(BaseModel):
     message: str
     verified_data: Optional[Dict[str, Any]] = None
 
+class MetadataEvidenceContext(BaseModel):
+    original_values: Dict[str, Any] = Field(default_factory=dict)
+    normalized_values: Dict[str, Any] = Field(default_factory=dict)
+    rule_triggered: str
+    rule_title: str
+    reason_for_review: str
+    parsing_warnings: List[str] = Field(default_factory=list)
+
 class Finding(BaseModel):
     id: str
     application_id: str
     rule_id: str
-    rule_version: str = "1.0"
+    rule_version: str = "2025.1"
     rule_name: str
+    rule_category: RuleCategory = RuleCategory.STATUTORY_MANDATE
+    aph_reference: Optional[str] = None
     severity: Severity
     status: FindingStatus
+    lifecycle: FindingLifecycle = FindingLifecycle.OPEN
     claim: str
     description: str
-    fields_involved: List[ExtractedField] = []
+    fields_involved: List[ExtractedField] = Field(default_factory=list)
+    metadata_context: Optional[MetadataEvidenceContext] = None
     verification_result: Optional[VerificationResult] = None
-    user_status: str = "UNREVIEWED" # UNREVIEWED, CONFIRMED, DISMISSED
+    review: HumanReviewDecision = Field(default_factory=HumanReviewDecision)
+    user_status: str = "UNREVIEWED" # Kept for UI display compatibility (UNREVIEWED, CONFIRMED, DISMISSED)
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class AuditEvent(BaseModel):
