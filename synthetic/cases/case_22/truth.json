@@ -1,0 +1,32 @@
+{
+  "case_id": "case_22",
+  "institution_name": "Nexus Institute of Technology",
+  "application_id": "APP-2025-1022",
+  "permanent_id": "PID-1-7000022",
+  "application_date": "2025-03-15",
+  "expected_defects": [
+    "FACULTY_COUNT_MISMATCH"
+  ],
+  "planted_defects": [
+    "FACULTY_COUNT_MISMATCH"
+  ],
+  "clean": false,
+  "generated_files": [
+    "application_form.pdf",
+    "approval_letter.pdf",
+    "land_document.pdf",
+    "fire_noc.pdf",
+    "faculty_list.pdf"
+  ],
+  "fields": {
+    "application_id": "APP-2025-1022",
+    "permanent_id": "PID-1-7000022",
+    "institution_name": "Nexus Institute of Technology",
+    "declared_land_area": 4.5,
+    "declared_faculty_count": 25,
+    "fire_noc_valid_to": "2026-12-31",
+    "approved_academic_year": "2024-2025",
+    "land_doc_area_acres": 4.5,
+    "faculty_list_count": 14
+  }
+}

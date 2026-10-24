@@ -1,0 +1,377 @@
+{
+  "PID-1-7000001": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000001",
+    "institution_name": "Apex Institute of Technology",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5001": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5001",
+    "institution_name": "Apex Institute of Technology",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000002": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000002",
+    "institution_name": "Silver Oak Engineering College",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5002": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5002",
+    "institution_name": "Silver Oak Engineering College",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000003": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000003",
+    "institution_name": "Vanguard Institute of Science and Technology",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5003": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5003",
+    "institution_name": "Vanguard Institute of Science and Technology",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000004": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000004",
+    "institution_name": "Horizon Academy of Engineering",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5004": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5004",
+    "institution_name": "Horizon Academy of Engineering",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000005": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000005",
+    "institution_name": "Pinnacle Institute of Technology",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5005": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5005",
+    "institution_name": "Pinnacle Institute of Technology",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000006": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000006",
+    "institution_name": "Beacon Institute of Technology",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5006": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5006",
+    "institution_name": "Beacon Institute of Technology",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000007": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000007",
+    "institution_name": "Crestline Engineering Institute",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5007": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5007",
+    "institution_name": "Crestline Engineering Institute",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000008": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000008",
+    "institution_name": "Evergreen College of Engineering",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5008": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5008",
+    "institution_name": "Evergreen College of Engineering",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000009": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000009",
+    "institution_name": "Zenith Institute of Technology",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5009": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5009",
+    "institution_name": "Zenith Institute of Technology",
+    "status": "EXPIRED",
+    "valid_to": "2023-11-30"
+  },
+  "PID-1-7000010": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000010",
+    "institution_name": "Imperial College of Engineering",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5010": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5010",
+    "institution_name": "Imperial College of Engineering",
+    "status": "EXPIRED",
+    "valid_to": "2024-02-15"
+  },
+  "PID-1-7000011": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000011",
+    "institution_name": "Summit Institute of Engineering",
+    "status": "VERIFIED",
+    "approved_academic_year": "2019-2020",
+    "current_eoa_status": "EXPIRED"
+  },
+  "FNOC-2024-DIST-5011": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5011",
+    "institution_name": "Summit Institute of Engineering",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000012": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000012",
+    "institution_name": "Metropolitan Institute of Technology",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5012": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5012",
+    "institution_name": "Metropolitan Institute of Technology",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000013": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000013",
+    "institution_name": "Global Academy of Technology",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5013": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5013",
+    "institution_name": "Global Educational & Charitable Trust",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000014": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000014",
+    "institution_name": "Starlight Institute of Engineering",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5014": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5014",
+    "institution_name": "Starlight Institute of Engineering",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000015": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000015",
+    "institution_name": "Trident Institute of Technology",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5015": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5015",
+    "institution_name": "Trident Institute of Technology",
+    "status": "VERIFIED",
+    "valid_to": "2025-03-31"
+  },
+  "PID-1-7000016": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000016",
+    "institution_name": "Quantum College of Engineering",
+    "status": "VERIFIED",
+    "approved_academic_year": "2021-2022",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5016": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5016",
+    "institution_name": "Quantum College of Engineering",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000017": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000017",
+    "institution_name": "Omega Institute of Science & Tech",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5017": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5017",
+    "institution_name": "Omega Institute of Science & Tech",
+    "status": "EXPIRED",
+    "valid_to": "2023-01-01"
+  },
+  "PID-1-7000018": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000018",
+    "institution_name": "Bluecrest Institute of Technology",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5018": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5018",
+    "institution_name": "Bluecrest Institute of Technology",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000019": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000019",
+    "institution_name": "Sterling College of Engineering",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5019": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5019",
+    "institution_name": "Sterling College of Engineering",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000020": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000020",
+    "institution_name": "Unity Institute of Technology",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5020": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5020",
+    "institution_name": "Unity Institute of Technology",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000021": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000021",
+    "institution_name": "Paramount College of Engineering",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5021": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5021",
+    "institution_name": "Paramount College of Engineering",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000022": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000022",
+    "institution_name": "Nexus Institute of Technology",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5022": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5022",
+    "institution_name": "Nexus Institute of Technology",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000023": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000023",
+    "institution_name": "Solaris Engineering College",
+    "status": "SOURCE_UNAVAILABLE",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5023": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5023",
+    "institution_name": "Solaris Engineering College",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000024": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000024",
+    "institution_name": "Disputed Matrix Institute of Technology",
+    "status": "MISMATCH",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5024": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5024",
+    "institution_name": "Matrix Institute of Technology",
+    "status": "VERIFIED",
+    "valid_to": "2026-12-31"
+  },
+  "PID-1-7000025": {
+    "issuer": "AICTE_CENTRAL_PORTAL",
+    "record_id": "PID-1-7000025",
+    "institution_name": "Orion College of Technology",
+    "status": "VERIFIED",
+    "approved_academic_year": "2024-2025",
+    "current_eoa_status": "VALID"
+  },
+  "FNOC-2024-DIST-5025": {
+    "issuer": "STATE_FIRE_SERVICES_PORTAL",
+    "record_id": "FNOC-2024-DIST-5025",
+    "institution_name": "Orion College of Technology",
+    "status": "EXPIRED",
+    "valid_to": "2022-05-10"
+  }
+}

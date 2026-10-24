@@ -1,0 +1,32 @@
+{
+  "case_id": "case_16",
+  "institution_name": "Quantum College of Engineering",
+  "application_id": "APP-2025-1016",
+  "permanent_id": "PID-1-7000016",
+  "application_date": "2025-03-15",
+  "expected_defects": [
+    "OUTDATED_APPROVAL_ORDER"
+  ],
+  "planted_defects": [
+    "OUTDATED_APPROVAL_ORDER"
+  ],
+  "clean": false,
+  "generated_files": [
+    "application_form.pdf",
+    "approval_letter.pdf",
+    "land_document.pdf",
+    "fire_noc.pdf",
+    "faculty_list.pdf"
+  ],
+  "fields": {
+    "application_id": "APP-2025-1016",
+    "permanent_id": "PID-1-7000016",
+    "institution_name": "Quantum College of Engineering",
+    "declared_land_area": 4.5,
+    "declared_faculty_count": 20,
+    "fire_noc_valid_to": "2026-12-31",
+    "approved_academic_year": "2021-2022",
+    "land_doc_area_acres": 4.5,
+    "faculty_list_count": 20
+  }
+}

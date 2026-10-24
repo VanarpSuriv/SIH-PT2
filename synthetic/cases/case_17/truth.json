@@ -1,0 +1,34 @@
+{
+  "case_id": "case_17",
+  "institution_name": "Omega Institute of Science & Tech",
+  "application_id": "APP-2025-1017",
+  "permanent_id": "PID-1-7000017",
+  "application_date": "2026-11-20",
+  "expected_defects": [
+    "EXPIRED_FIRE_NOC",
+    "DATE_CONFLICT_APPLICATION"
+  ],
+  "planted_defects": [
+    "EXPIRED_FIRE_NOC",
+    "DATE_CONFLICT_APPLICATION"
+  ],
+  "clean": false,
+  "generated_files": [
+    "application_form.pdf",
+    "approval_letter.pdf",
+    "land_document.pdf",
+    "fire_noc.pdf",
+    "faculty_list.pdf"
+  ],
+  "fields": {
+    "application_id": "APP-2025-1017",
+    "permanent_id": "PID-1-7000017",
+    "institution_name": "Omega Institute of Science & Tech",
+    "declared_land_area": 4.5,
+    "declared_faculty_count": 20,
+    "fire_noc_valid_to": "2023-01-01",
+    "approved_academic_year": "2024-2025",
+    "land_doc_area_acres": 4.5,
+    "faculty_list_count": 20
+  }
+}

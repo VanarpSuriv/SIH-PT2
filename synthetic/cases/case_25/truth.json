@@ -1,0 +1,34 @@
+{
+  "case_id": "case_25",
+  "institution_name": "Orion College of Technology",
+  "application_id": "APP-2025-1025",
+  "permanent_id": "PID-1-7000025",
+  "application_date": "2025-03-15",
+  "expected_defects": [
+    "EXPIRED_FIRE_NOC",
+    "LAND_AREA_MISMATCH"
+  ],
+  "planted_defects": [
+    "EXPIRED_FIRE_NOC",
+    "LAND_AREA_MISMATCH"
+  ],
+  "clean": false,
+  "generated_files": [
+    "application_form.pdf",
+    "approval_letter.pdf",
+    "land_document.pdf",
+    "fire_noc.pdf",
+    "faculty_list.pdf"
+  ],
+  "fields": {
+    "application_id": "APP-2025-1025",
+    "permanent_id": "PID-1-7000025",
+    "institution_name": "Orion College of Technology",
+    "declared_land_area": 5.0,
+    "declared_faculty_count": 20,
+    "fire_noc_valid_to": "2022-05-10",
+    "approved_academic_year": "2024-2025",
+    "land_doc_area_acres": 2.0,
+    "faculty_list_count": 20
+  }
+}
