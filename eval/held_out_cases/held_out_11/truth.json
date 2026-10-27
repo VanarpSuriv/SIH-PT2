@@ -1,0 +1,16 @@
+{
+  "case_id": "held_out_11",
+  "case_name": "Hard Defect: Entity Divergence (Vidyapeeth vs Shree Balaji)",
+  "institution_name": "Vidyapeeth Engineering Academy",
+  "application_date": "2025-03-15",
+  "planted_defects": [
+    "NAME_MISMATCH"
+  ],
+  "generated_files": [
+    "application_form.pdf",
+    "approval_letter.pdf",
+    "land_document.pdf",
+    "faculty_list.pdf",
+    "fire_noc.pdf"
+  ]
+}

@@ -117,10 +117,16 @@ def extract_pdf_metadata(file_bytes: bytes, filename: str) -> DocumentMetadata:
     raw_mod = meta_raw.get("modDate")
 
     # Clean empty strings
-    if creator and creator.strip() in ["", "(unspecified)", "(anonymous)"]:
+    if not creator or not creator.strip() or creator.strip() in ["(unspecified)", "(anonymous)"]:
         creator = None
-    if producer and producer.strip() in ["", "(unspecified)", "(anonymous)"]:
+    if not producer or not producer.strip() or producer.strip() in ["(unspecified)", "(anonymous)"]:
         producer = None
+    if not author or not author.strip():
+        author = None
+    if not raw_creation or not raw_creation.strip():
+        raw_creation = None
+    if not raw_mod or not raw_mod.strip():
+        raw_mod = None
 
     # Parse and normalize dates
     norm_creation, creation_warns = parse_pdf_date(raw_creation)
@@ -134,9 +140,9 @@ def extract_pdf_metadata(file_bytes: bytes, filename: str) -> DocumentMetadata:
         try:
             dt_create = datetime.datetime.fromisoformat(norm_creation)
             dt_mod = datetime.datetime.fromisoformat(norm_mod)
-            # Flag if ModDate precedes CreationDate by more than 1 second (to account for subsecond rounding)
+            # Flag if ModDate precedes CreationDate by more than 1 hour (3600 seconds) to account for subsecond rounding, timezone skew and compiler clock jitter
             delta_seconds = (dt_mod - dt_create).total_seconds()
-            if delta_seconds < -1.0:
+            if delta_seconds < -3600.0:
                 metadata_anomalies.append("MOD_DATE_PRECEDES_CREATION_DATE")
         except Exception:
             pass

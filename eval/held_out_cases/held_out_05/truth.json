@@ -1,0 +1,16 @@
+{
+  "case_id": "held_out_05",
+  "case_name": "Hard Defect: Subtle Faculty Deficit (32 declared vs 31 rostered)",
+  "institution_name": "Horizon College of Technology",
+  "application_date": "2025-03-15",
+  "planted_defects": [
+    "FACULTY_MISMATCH"
+  ],
+  "generated_files": [
+    "application_form.pdf",
+    "approval_letter.pdf",
+    "land_document.pdf",
+    "faculty_list.pdf",
+    "fire_noc.pdf"
+  ]
+}

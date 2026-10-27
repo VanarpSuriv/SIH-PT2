@@ -13,11 +13,16 @@ import os
 import sys
 import json
 import pymupdf
+import secrets
 from fastapi.testclient import TestClient
 
 # Ensure root workspace is in sys.path
 WORKSPACE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, WORKSPACE_DIR)
+
+# Generate an unpredictable dynamic secret at runtime for acceptance testing
+ACCEPTANCE_OFFICER_TOKEN = secrets.token_hex(32)
+os.environ["OFFICER_AUTH_TOKEN"] = ACCEPTANCE_OFFICER_TOKEN
 
 from backend.main import app
 
@@ -154,6 +159,10 @@ def run_acceptance_test():
     review_notes = "Officer verified PDF header timestamps. ModDate anomaly confirmed as potential compile-time timing discrepancy."
     review_resp = client.post(
         f"/api/findings/{finding_id}/review",
+        headers={
+            "Authorization": f"Bearer {ACCEPTANCE_OFFICER_TOKEN}",
+            "X-Officer-Role": "OFFICER"
+        },
         json={
             "decision": "CONFIRMED_DEFECT",
             "reviewer_notes": review_notes,
@@ -179,7 +188,7 @@ def run_acceptance_test():
     assert f_updated["review"]["reviewed_by"] == "AICTE-CHIEF-INSPECTOR-42"
 
     # Step 7: Cryptographic Audit Trail Verification
-    print("\n[Step 7] Verifying Immutable Hash Chain (GET /api/audit/verify)...")
+    print("\n[Step 7] Verifying Tamper-Evident Hash Chain (GET /api/audit/verify)...")
     audit_chain_resp = client.get("/api/audit/verify")
     assert audit_chain_resp.status_code == 200
     chain_info = audit_chain_resp.json()

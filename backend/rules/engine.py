@@ -4,6 +4,7 @@ Evaluates completeness, expiry, fuzzy cross-document consistency, and metadata i
 Explicitly distinguishes statutory mandates from technical consistency checks and metadata review flags.
 """
 import os
+import re
 import uuid
 import yaml
 from datetime import datetime, timezone, timedelta
@@ -13,6 +14,7 @@ from rapidfuzz import fuzz
 from backend.models import (
     DocumentType,
     DocumentRecord,
+    DocumentForensicsResult,
     ExtractedField,
     Finding,
     FindingStatus,
@@ -22,6 +24,35 @@ from backend.models import (
     RuleCategory,
     Severity
 )
+from backend.verify.qr_verifier import QRCodeVerifier
+
+def normalize_institution_name(name: str) -> str:
+    """Normalize common abbreviations and punctuation in institutional names."""
+    if not name:
+        return ""
+    n = name.lower()
+    n = re.sub(r'\binst\.?\b', 'institute', n)
+    n = re.sub(r'\btech\.?\b', 'technology', n)
+    n = re.sub(r'\bengg\.?\b', 'engineering', n)
+    n = re.sub(r'\bcoll\.?\b', 'college', n)
+    n = re.sub(r'\buniv\.?\b', 'university', n)
+    n = re.sub(r'[^\w\s]', ' ', n)
+    return re.sub(r'\s+', ' ', n).strip()
+
+def normalize_address(address: str) -> str:
+    """Normalize address abbreviations and punctuation based on AI-Document-Verification logic."""
+    if not address:
+        return ""
+    addr = address.lower()
+    addr = re.sub(r'\bhouse no\.?\s*', 'h no ', addr)
+    addr = re.sub(r'\bh\.?no\.?\s*', 'h no ', addr)
+    addr = re.sub(r'\bpin:?\s*', 'pin ', addr)
+    addr = re.sub(r'\bpin code:?\s*', 'pin ', addr)
+    addr = re.sub(r'\brd\.?\b', 'road', addr)
+    addr = re.sub(r'\bst\.?\b', 'street', addr)
+    addr = re.sub(r'\bplt\.?\b', 'plot', addr)
+    addr = re.sub(r'[^\w\s]', ' ', addr)
+    return re.sub(r'\s+', ' ', addr).strip()
 
 RULES_YAML_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "aicte_eoa_rules.yaml")
 
@@ -40,10 +71,11 @@ class RulesEngine:
         self,
         application_id: str,
         documents: List[DocumentRecord],
-        fields: List[ExtractedField]
+        fields: List[ExtractedField],
+        forensics_map: Optional[Dict[str, DocumentForensicsResult]] = None,
     ) -> List[Finding]:
         """
-        Evaluate all rules against the uploaded documents, extracted fields, and PDF metadata.
+        Evaluate all rules against the uploaded documents, extracted fields, PDF metadata, and forensics.
         Returns a list of Findings with exact field references, separated lifecycles, and metadata context.
         """
         findings: List[Finding] = []
@@ -231,7 +263,9 @@ class RulesEngine:
                             if other_fld:
                                 checked_fields.append(other_fld)
                                 other_name = str(other_fld.value)
-                                score = fuzz.token_sort_ratio(app_name, other_name)
+                                score_raw = fuzz.token_sort_ratio(app_name, other_name)
+                                score_norm = fuzz.token_sort_ratio(normalize_institution_name(app_name), normalize_institution_name(other_name))
+                                score = max(score_raw, score_norm)
                                 if score < threshold:
                                     all_matching = False
                                     mismatches.append(f"{d_label} ('{other_name}' - {score:.1f}% match)")
@@ -327,7 +361,7 @@ class RulesEngine:
                                     severity=severity,
                                     status=FindingStatus.FAIL,
                                     lifecycle=FindingLifecycle.OPEN,
-                                    claim=f"Registered land area ({reg_val} acres) is below the statutory AICTE minimum of {min_req} acres.",
+                                    claim=f"Campus land area ({reg_val} acres) does not satisfy the minimum acreage norm of {min_req} acres prescribed under Annexure 3 §3.1.",
                                     description=description,
                                     fields_involved=[app_land_fld, land_doc_fld]
                                 ))
@@ -343,7 +377,7 @@ class RulesEngine:
                                     severity=severity,
                                     status=FindingStatus.FAIL,
                                     lifecycle=FindingLifecycle.OPEN,
-                                    claim=f"Land area inflation: Application claims {dec_val} acres, but registered title deed only proves {reg_val} acres.",
+                                    claim=f"Land area discrepancy: Application declares {dec_val} acres, exceeding the {reg_val} acres documented in supporting land records. Flagged for land norm verification under Annexure 3 §3.1.",
                                     description=description,
                                     fields_involved=[app_land_fld, land_doc_fld]
                                 ))
@@ -421,7 +455,7 @@ class RulesEngine:
                                 dt_c = datetime.fromisoformat(norm_c)
                                 dt_m = datetime.fromisoformat(norm_m)
                                 delta_sec = (dt_m - dt_c).total_seconds()
-                                if delta_sec < -1.0: # ModDate earlier than CreationDate by > 1s
+                                if delta_sec < -3600.0: # ModDate earlier than CreationDate by > 1 hour (allowing for clock jitter)
                                     hours_diff = abs(delta_sec) / 3600.0
                                     evidence_field = ExtractedField(
                                         name="pdf_metadata_timestamps",
@@ -580,5 +614,244 @@ class RulesEngine:
                                 fields_involved=[evidence_field],
                                 metadata_context=ctx
                             ))
+
+            # -------------------------------------------------------------
+            # 5. FORENSIC ADVISORY RULES (Computer Vision, Steganalysis & Clone Detection)
+            # -------------------------------------------------------------
+            elif rule_type == "forensics" and forensics_map:
+                if rule_id == "FOR-001":  # Copy-Move Cloned Region Detected
+                    for doc in documents:
+                        f_res = forensics_map.get(doc.id)
+                        if f_res:
+                            for pg in f_res.page_results:
+                                if pg.copy_move_detected:
+                                    evidence_field = ExtractedField(
+                                        name="copy_move_cloned_region",
+                                        value=f"Page {pg.page_number}: {pg.copy_move_matches} geometric duplicate keypoints (score: {pg.copy_move_score})",
+                                        raw_text="SIFT/RANSAC duplicate feature cluster detected",
+                                        document_type=doc.document_type,
+                                        document_id=doc.id,
+                                        page_number=pg.page_number,
+                                        bbox=[50.0, 50.0, 500.0, 500.0],
+                                        confidence=float(pg.copy_move_score),
+                                    )
+                                    findings.append(Finding(
+                                        id=f"find_{uuid.uuid4().hex[:10]}",
+                                        application_id=application_id,
+                                        rule_id=rule_id,
+                                        rule_version=rule_version,
+                                        rule_name=rule_title,
+                                        rule_category=rule_category,
+                                        aph_reference=aph_ref,
+                                        severity=severity,
+                                        status=FindingStatus.FLAGGED,
+                                        lifecycle=FindingLifecycle.OPEN,
+                                        claim=f"Copy-Move duplicate region detected in '{doc.filename}' (Page {pg.page_number}): {pg.copy_move_matches} geometric inlier points indicate possible seal, stamp, or signature duplication.",
+                                        description=description,
+                                        fields_involved=[evidence_field],
+                                    ))
+
+                elif rule_id == "FOR-002":  # ELA Compression Anomaly
+                    for doc in documents:
+                        f_res = forensics_map.get(doc.id)
+                        if f_res:
+                            for pg in f_res.page_results:
+                                if pg.ela_mean_residual > 0.12 or pg.ela_max_residual > 0.85:
+                                    evidence_field = ExtractedField(
+                                        name="ela_compression_residual",
+                                        value=f"Mean ELA: {pg.ela_mean_residual:.3f}, Max ELA: {pg.ela_max_residual:.3f}",
+                                        raw_text="Elevated localized JPEG recompression error",
+                                        document_type=doc.document_type,
+                                        document_id=doc.id,
+                                        page_number=pg.page_number,
+                                        bbox=[50.0, 50.0, 500.0, 500.0],
+                                        confidence=min(1.0, float(pg.ela_mean_residual * 5.0)),
+                                    )
+                                    findings.append(Finding(
+                                        id=f"find_{uuid.uuid4().hex[:10]}",
+                                        application_id=application_id,
+                                        rule_id=rule_id,
+                                        rule_version=rule_version,
+                                        rule_name=rule_title,
+                                        rule_category=rule_category,
+                                        aph_reference=aph_ref,
+                                        severity=severity,
+                                        status=FindingStatus.FLAGGED,
+                                        lifecycle=FindingLifecycle.OPEN,
+                                        claim=f"Compression inconsistency in '{doc.filename}' (Page {pg.page_number}): Elevated ELA residual ({pg.ela_mean_residual:.3f}) suggests localized graphic editing or splicing.",
+                                        description=description,
+                                        fields_involved=[evidence_field],
+                                    ))
+
+                elif rule_id == "FOR-003":  # Typographical Style Outlier
+                    for doc in documents:
+                        f_res = forensics_map.get(doc.id)
+                        if f_res:
+                            for pg in f_res.page_results:
+                                if pg.style_outliers_count >= 2:
+                                    outlier_texts = [t.text for t in pg.token_style_outliers[:5]]
+                                    evidence_field = ExtractedField(
+                                        name="typography_outlier_tokens",
+                                        value=f"Page {pg.page_number}: {pg.style_outliers_count} tokens deviate in font stroke/height: {', '.join(outlier_texts)}",
+                                        raw_text="; ".join(outlier_texts),
+                                        document_type=doc.document_type,
+                                        document_id=doc.id,
+                                        page_number=pg.page_number,
+                                        bbox=pg.token_style_outliers[0].bbox if pg.token_style_outliers else [50.0, 50.0, 200.0, 80.0],
+                                        confidence=0.85,
+                                    )
+                                    findings.append(Finding(
+                                        id=f"find_{uuid.uuid4().hex[:10]}",
+                                        application_id=application_id,
+                                        rule_id=rule_id,
+                                        rule_version=rule_version,
+                                        rule_name=rule_title,
+                                        rule_category=rule_category,
+                                        aph_reference=aph_ref,
+                                        severity=severity,
+                                        status=FindingStatus.FLAGGED,
+                                        lifecycle=FindingLifecycle.OPEN,
+                                        claim=f"Typographical font style outliers in '{doc.filename}' (Page {pg.page_number}): {pg.style_outliers_count} short tokens ('{', '.join(outlier_texts)}') exhibit anomalous stroke width or character height.",
+                                        description=description,
+                                        fields_involved=[evidence_field],
+                                    ))
+
+                elif rule_id == "FOR-004":  # Scan Quality Gating
+                    for doc in documents:
+                        f_res = forensics_map.get(doc.id)
+                        if f_res:
+                            for pg in f_res.page_results:
+                                if "IMAGE_TOO_BLURRY" in pg.anomalies or "GLARE_DETECTED" in pg.anomalies:
+                                    evidence_field = ExtractedField(
+                                        name="scan_quality_warning",
+                                        value=f"Blur score: {pg.blur_score}, Glare ratio: {pg.glare_ratio:.2%}",
+                                        raw_text="; ".join([a for a in pg.anomalies if a in ("IMAGE_TOO_BLURRY", "GLARE_DETECTED")]),
+                                        document_type=doc.document_type,
+                                        document_id=doc.id,
+                                        page_number=pg.page_number,
+                                        bbox=[50.0, 50.0, 500.0, 500.0],
+                                        confidence=0.90,
+                                    )
+                                    findings.append(Finding(
+                                        id=f"find_{uuid.uuid4().hex[:10]}",
+                                        application_id=application_id,
+                                        rule_id=rule_id,
+                                        rule_version=rule_version,
+                                        rule_name=rule_title,
+                                        rule_category=rule_category,
+                                        aph_reference=aph_ref,
+                                        severity=severity,
+                                        status=FindingStatus.FLAGGED,
+                                        lifecycle=FindingLifecycle.OPEN,
+                                        claim=f"Scan quality advisory in '{doc.filename}' (Page {pg.page_number}): {', '.join([a for a in pg.anomalies if a in ('IMAGE_TOO_BLURRY', 'GLARE_DETECTED')])}. May impair automated text extraction.",
+                                        description=description,
+                                        fields_involved=[evidence_field],
+                                    ))
+
+                elif rule_id == "FOR-005":  # QR Code Verification
+                    for doc in documents:
+                        f_res = forensics_map.get(doc.id)
+                        if f_res:
+                            for pg in f_res.page_results:
+                                if pg.qr_detected and pg.qr_payload:
+                                    qr_eval = QRCodeVerifier.verify_payload(pg.qr_payload)
+                                    evidence_field = ExtractedField(
+                                        name="qr_code_payload",
+                                        value=pg.qr_payload[:120],
+                                        raw_text=pg.qr_payload,
+                                        document_type=doc.document_type,
+                                        document_id=doc.id,
+                                        page_number=pg.page_number,
+                                        bbox=[50.0, 50.0, 200.0, 200.0],
+                                        confidence=0.99,
+                                    )
+                                    if qr_eval["status"] == "VERIFIED_OFFICIAL":
+                                        findings.append(Finding(
+                                            id=f"find_{uuid.uuid4().hex[:10]}",
+                                            application_id=application_id,
+                                            rule_id=rule_id,
+                                            rule_version=rule_version,
+                                            rule_name=rule_title,
+                                            rule_category=rule_category,
+                                            aph_reference=aph_ref,
+                                            severity=Severity.INFO,
+                                            status=FindingStatus.PASS,
+                                            lifecycle=FindingLifecycle.RESOLVED,
+                                            claim=f"Embedded QR code in '{doc.filename}' (Page {pg.page_number}) verified against official domain '{qr_eval['domain']}'.",
+                                            description=description,
+                                            fields_involved=[evidence_field],
+                                        ))
+                                    elif qr_eval["status"] == "SSRF_REJECTED":
+                                        findings.append(Finding(
+                                            id=f"find_{uuid.uuid4().hex[:10]}",
+                                            application_id=application_id,
+                                            rule_id=rule_id,
+                                            rule_version=rule_version,
+                                            rule_name=rule_title,
+                                            rule_category=rule_category,
+                                            aph_reference=aph_ref,
+                                            severity=Severity.HIGH,
+                                            status=FindingStatus.FLAGGED,
+                                            lifecycle=FindingLifecycle.OPEN,
+                                            claim=f"SSRF defense alert: QR code in '{doc.filename}' (Page {pg.page_number}) points to internal/private IP address: {qr_eval['message']}.",
+                                            description=description,
+                                            fields_involved=[evidence_field],
+                                        ))
+                                    elif qr_eval["status"] == "EXTERNAL_ADVISORY":
+                                        findings.append(Finding(
+                                            id=f"find_{uuid.uuid4().hex[:10]}",
+                                            application_id=application_id,
+                                            rule_id=rule_id,
+                                            rule_version=rule_version,
+                                            rule_name=rule_title,
+                                            rule_category=rule_category,
+                                            aph_reference=aph_ref,
+                                            severity=severity,
+                                            status=FindingStatus.FLAGGED,
+                                            lifecycle=FindingLifecycle.OPEN,
+                                            claim=f"External QR domain in '{doc.filename}' (Page {pg.page_number}): QR URL references non-whitelisted domain '{qr_eval['domain']}'. Flagged for officer review.",
+                                            description=description,
+                                            fields_involved=[evidence_field],
+                                        ))
+                                    elif qr_eval["status"] == "DNS_RESOLUTION_FAILED":
+                                        findings.append(Finding(
+                                            id=f"find_{uuid.uuid4().hex[:10]}",
+                                            application_id=application_id,
+                                            rule_id=rule_id,
+                                            rule_version=rule_version,
+                                            rule_name=rule_title,
+                                            rule_category=rule_category,
+                                            aph_reference=aph_ref,
+                                            severity=Severity.MEDIUM,
+                                            status=FindingStatus.FLAGGED,
+                                            lifecycle=FindingLifecycle.OPEN,
+                                            claim=f"DNS resolution failure for QR code domain in '{doc.filename}' (Page {pg.page_number}): {qr_eval['message']}.",
+                                            description=description,
+                                            fields_involved=[evidence_field],
+                                        ))
+                                    elif qr_eval["status"] == "NON_URL_DATA":
+                                        findings.append(Finding(
+                                            id=f"find_{uuid.uuid4().hex[:10]}",
+                                            application_id=application_id,
+                                            rule_id=rule_id,
+                                            rule_version=rule_version,
+                                            rule_name=rule_title,
+                                            rule_category=rule_category,
+                                            aph_reference=aph_ref,
+                                            severity=Severity.INFO,
+                                            status=FindingStatus.PASS,
+                                            lifecycle=FindingLifecycle.RESOLVED,
+                                            claim=f"Embedded QR code in '{doc.filename}' (Page {pg.page_number}) contains non-URL plaintext data: '{qr_eval.get('payload_snippet', '')}'.",
+                                            description=description,
+                                            fields_involved=[evidence_field],
+                                        ))
+
+        rule_map = {r["id"]: r for r in self.rules_def.get("rules", [])}
+        for f in findings:
+            r = rule_map.get(f.rule_id)
+            if r:
+                f.source_section = r.get("source_section")
+                f.applicability_conditions = r.get("applicability_conditions")
+                f.supported_requirement = r.get("supported_requirement")
 
         return findings

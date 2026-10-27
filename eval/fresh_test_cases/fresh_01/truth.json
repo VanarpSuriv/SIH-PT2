@@ -1,0 +1,14 @@
+{
+  "case_id": "fresh_01",
+  "case_name": "Hard Negative: LibreOffice / Cairo Producer with Normal Timeline",
+  "institution_name": "Bharat Institute of Technology and Management",
+  "application_date": "2025-03-15",
+  "planted_defects": [],
+  "generated_files": [
+    "application_form.pdf",
+    "approval_letter.pdf",
+    "land_document.pdf",
+    "faculty_list.pdf",
+    "fire_noc.pdf"
+  ]
+}

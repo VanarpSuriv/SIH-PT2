@@ -1,0 +1,16 @@
+{
+  "case_id": "fresh_10",
+  "case_name": "Technical Defect: Entity Name Divergence (Kalinga vs Coastal Maritime)",
+  "institution_name": "Kalinga Institute of Engineering",
+  "application_date": "2025-03-15",
+  "planted_defects": [
+    "NAME_MISMATCH"
+  ],
+  "generated_files": [
+    "application_form.pdf",
+    "approval_letter.pdf",
+    "land_document.pdf",
+    "faculty_list.pdf",
+    "fire_noc.pdf"
+  ]
+}

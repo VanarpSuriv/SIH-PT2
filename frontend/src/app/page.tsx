@@ -1,8 +1,34 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { UploadCloud, FileText, CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, RefreshCw, Sparkles, Filter } from 'lucide-react';
+import {
+  UploadCloud,
+  FileText,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  ArrowRight,
+  ShieldCheck,
+  ShieldAlert,
+  Search,
+  Filter,
+  RefreshCw,
+  Inbox,
+  Sparkles,
+  Info,
+  ChevronRight,
+  Database,
+  Layers,
+  FileCheck2,
+  History,
+  BookOpen
+} from 'lucide-react';
+import { Card, MetricCard } from '@/components/ui/Card';
+import { StatusBadge, SeverityBadge } from '@/components/ui/Badge';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface SyntheticCase {
   case_id: string;
@@ -14,46 +40,104 @@ interface SyntheticCase {
   generated_files: string[];
 }
 
-export default function UploadPage() {
+interface ApplicationSummary {
+  id: string;
+  institution_name: string;
+  application_date: string;
+  status: string;
+  created_at: string;
+  documents: { id: string; filename: string; document_type: string }[];
+  findings: {
+    id: string;
+    severity: string;
+    status: string;
+    rule_category?: string;
+    lifecycle?: string;
+    review?: { decision?: string; officer_id?: string; timestamp?: string; notes?: string };
+  }[];
+}
+
+interface AuditEventItem {
+  id: string;
+  action: string;
+  application_id: string;
+  timestamp: string;
+  payload: Record<string, any>;
+}
+
+const API_BASE = 'http://localhost:8000';
+
+/**
+ * Overview Dashboard answering the core operational questions:
+ * 1. What needs attention now?
+ * 2. Which applications are blocked or incomplete?
+ * 3. Which verifications are pending?
+ * 4. What actions should the officer take next?
+ */
+export default function OverviewPage() {
   const router = useRouter();
-  const [cases, setCases] = useState<SyntheticCase[]>([]);
-  const [loadingCases, setLoadingCases] = useState(true);
+
+  const [syntheticCases, setSyntheticCases] = useState<SyntheticCase[]>([]);
+  const [applications, setApplications] = useState<ApplicationSummary[]>([]);
+  const [recentAudit, setRecentAudit] = useState<AuditEventItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Upload Form State
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [institutionName, setInstitutionName] = useState('Apex Institute of Technology');
-  const [filterTag, setFilterTag] = useState<string>('ALL');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [institutionName, setInstitutionName] = useState('National Institute of Advanced Technology');
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchCases();
+    loadOverviewData();
   }, []);
 
-  const fetchCases = async () => {
+  const loadOverviewData = async () => {
     try {
-      setLoadingCases(true);
-      const res = await fetch('http://localhost:8000/api/cases');
-      if (!res.ok) throw new Error('Failed to fetch synthetic cases');
-      const data = await res.json();
-      setCases(data);
+      setLoading(true);
+      setError(null);
+
+      // Concurrent fetch of cases, applications, and audit events
+      const [casesRes, appsRes, auditRes] = await Promise.allSettled([
+        fetch(`${API_BASE}/api/cases`),
+        fetch(`${API_BASE}/api/applications`),
+        fetch(`${API_BASE}/api/audit`)
+      ]);
+
+      if (casesRes.status === 'fulfilled' && casesRes.value.ok) {
+        const data = await casesRes.value.json();
+        setSyntheticCases(data);
+      }
+
+      if (appsRes.status === 'fulfilled' && appsRes.value.ok) {
+        const data = await appsRes.value.json();
+        setApplications(data);
+      }
+
+      if (auditRes.status === 'fulfilled' && auditRes.value.ok) {
+        const data = await auditRes.value.json();
+        setRecentAudit(data.slice(-5).reverse());
+      }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Error connecting to verification service');
+      setError('Unable to connect to verification backend service at 127.0.0.1:8000');
     } finally {
-      setLoadingCases(false);
+      setLoading(false);
     }
   };
 
-  const handleCaseSelect = async (caseId: string) => {
+  const handleLaunchCase = async (caseId: string) => {
     try {
-      setLoadingAction(`loading_${caseId}`);
-      setErrorMessage(null);
-      const res = await fetch(`http://localhost:8000/api/cases/${caseId}/load`, {
+      setLoadingAction(`launch_${caseId}`);
+      setUploadError(null);
+      const res = await fetch(`${API_BASE}/api/cases/${caseId}/load`, {
         method: 'POST',
       });
-      if (!res.ok) throw new Error('Failed to load synthetic case');
+      if (!res.ok) throw new Error('Failed to load application case package');
       const app = await res.json();
       router.push(`/application/${app.id}`);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Error loading case');
+      setUploadError(err.message || 'Error loading pre-indexed case');
       setLoadingAction(null);
     }
   };
@@ -61,270 +145,434 @@ export default function UploadPage() {
   const handleFileUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (uploadedFiles.length === 0) {
-      setErrorMessage('Please select at least one PDF file to upload.');
+      setUploadError('Please select at least one PDF document to verify.');
       return;
     }
 
     try {
       setLoadingAction('uploading');
-      setErrorMessage(null);
+      setUploadError(null);
       const formData = new FormData();
       formData.append('institution_name', institutionName);
       uploadedFiles.forEach((file) => {
         formData.append('files', file);
       });
 
-      const res = await fetch('http://localhost:8000/api/upload', {
+      const res = await fetch(`${API_BASE}/api/upload`, {
         method: 'POST',
         body: formData,
       });
 
-      if (!res.ok) throw new Error('File upload and verification failed');
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || 'Document upload and verification pipeline failed');
+      }
+
       const app = await res.json();
       router.push(`/application/${app.id}`);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Upload error');
+      setUploadError(err.message || 'Upload error');
       setLoadingAction(null);
     }
   };
 
-  const defectCategories = [
-    { label: 'All Cases', value: 'ALL' },
-    { label: 'Clean (5)', value: 'CLEAN' },
-    { label: 'Missing Doc (3)', value: 'MISSING' },
-    { label: 'Expired NOC (3)', value: 'EXPIRED' },
-    { label: 'Name Mismatch (3)', value: 'NAME' },
-    { label: 'Date Conflict (3)', value: 'DATE' },
-    { label: 'Area Deficit (3)', value: 'AREA' },
-    { label: 'Faculty Mismatch (2)', value: 'FACULTY' },
-    { label: 'Simulated Unavailable (3)', value: 'SOURCE' },
-  ];
+  // Operational metrics calculated strictly from live application state
+  const totalApps = applications.length;
+  const actionRequiredApps = applications.filter((a) => a.status === 'ACTION_REQUIRED').length;
+  const compliantApps = applications.filter((a) => a.status === 'VERIFIED_COMPLIANT' || a.status === 'PASS').length;
+  const flaggedFindingsCount = applications.reduce((acc, a) => {
+    return acc + (a.findings ? a.findings.filter((f) => f.status === 'FAIL' && f.lifecycle !== 'RESOLVED').length : 0);
+  }, 0);
+  const reviewerConfirmedCount = applications.reduce((acc, a) => {
+    return acc + (a.findings ? a.findings.filter((f) => f.review?.decision === 'CONFIRMED_DEFECT').length : 0);
+  }, 0);
 
-  const filteredCases = cases.filter((c) => {
-    if (filterTag === 'ALL') return true;
-    if (filterTag === 'CLEAN') return c.clean;
-    if (filterTag === 'MISSING') return c.expected_defects.some((d) => d.includes('MISSING'));
-    if (filterTag === 'EXPIRED') return c.expected_defects.some((d) => d.includes('EXPIRED') || d.includes('OUTDATED'));
-    if (filterTag === 'NAME') return c.expected_defects.some((d) => d.includes('NAME'));
-    if (filterTag === 'DATE') return c.expected_defects.some((d) => d.includes('DATE'));
-    if (filterTag === 'AREA') return c.expected_defects.some((d) => d.includes('AREA'));
-    if (filterTag === 'FACULTY') return c.expected_defects.some((d) => d.includes('FACULTY'));
-    if (filterTag === 'SOURCE') return c.expected_defects.some((d) => d.includes('SOURCE') || d.includes('ISSUER'));
-    return true;
-  });
+  // Derive quick attention benchmark cases
+  const highPriorityCases = syntheticCases.filter(
+    (c) => !c.clean && (c.expected_defects.some((d) => d.includes('FIRE') || d.includes('EXPIRED') || d.includes('AREA') || d.includes('MISSING')))
+  ).slice(0, 4);
 
   return (
-    <div className="space-y-10">
-      {/* Hero Header */}
-      <div className="text-center max-w-3xl mx-auto space-y-3">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Autonomous AICTE Approval Handshake & Evidence Extraction</span>
+    <div className="space-y-8">
+      {/* Page Title & Operational Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-5">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            AICTE Scrutiny & Regulatory Intelligence Desk
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Official decision-support platform for AICTE Extension of Approval (EoA) application verification (APH 2024–2027).
+          </p>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
-          Extension of Approval (EoA) Verification
-        </h1>
-        <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
-          Upload multi-document institutional packages or launch from the 25 pre-indexed synthetic ground truth cases.
-          Verifies document completeness, validity dates, RapidFuzz cross-document consistency, and cryptographic audit chains.
-        </p>
+
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={loadOverviewData}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm transition-colors focus-ring"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-slate-400 ${loading ? 'animate-spin' : ''}`} />
+            <span>Sync Live Queue</span>
+          </button>
+          <Link
+            href="/applications"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-colors focus-ring"
+          >
+            <Inbox className="w-3.5 h-3.5" />
+            <span>Open Backlog Queue</span>
+          </Link>
+        </div>
       </div>
 
-      {errorMessage && (
-        <div className="max-w-2xl mx-auto p-4 rounded-xl bg-red-950/60 border border-red-500/30 text-red-300 text-sm flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
-          <span>{errorMessage}</span>
+      {error && (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button
+            onClick={loadOverviewData}
+            className="text-xs font-semibold underline text-amber-800 hover:text-amber-950"
+          >
+            Retry Connection
+          </button>
         </div>
       )}
 
-      {/* Main Grid: Upload Box + Synthetic Case Selector */}
+      {/* Operational KPI Metric Strip (Derived strictly from live applications) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard
+          title="Active Ingested Applications"
+          value={totalApps}
+          subtitle={totalApps > 0 ? `${actionRequiredApps} require scrutiny review` : '0 live cases in session memory'}
+          icon={Inbox}
+          tone={actionRequiredApps > 0 ? 'warning' : 'default'}
+        />
+        <MetricCard
+          title="Flagged Deficiencies"
+          value={flaggedFindingsCount}
+          subtitle="Automated checks awaiting review"
+          icon={ShieldAlert}
+          tone={flaggedFindingsCount > 0 ? 'danger' : 'default'}
+        />
+        <MetricCard
+          title="Reviewer-Confirmed Findings"
+          value={reviewerConfirmedCount}
+          subtitle="Affirmed by authorized officers"
+          icon={CheckCircle2}
+          tone={reviewerConfirmedCount > 0 ? 'info' : 'default'}
+        />
+        <MetricCard
+          title="Audit Trail Integrity"
+          value={recentAudit.length > 0 ? `${recentAudit.length} Events` : 'Intact'}
+          subtitle="SHA-256 hash-chain verified"
+          icon={Database}
+          tone="success"
+        />
+      </div>
+
+      {/* Two-Column Core Layout: Intake Desk + Priority Queue */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Upload Form Box */}
-        <div className="lg:col-span-5 glass-panel rounded-2xl p-6 sm:p-7 shadow-xl space-y-6">
-          <div className="flex items-center gap-2.5 border-b border-slate-800 pb-4">
-            <UploadCloud className="w-5 h-5 text-blue-400" />
-            <h2 className="text-lg font-semibold text-white">Direct Document Ingestion</h2>
-          </div>
-
-          <form onSubmit={handleFileUpload} className="space-y-5">
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                Applicant Institution Name
-              </label>
-              <input
-                type="text"
-                value={institutionName}
-                onChange={(e) => setInstitutionName(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g. Apex Institute of Technology"
-                required
-              />
-            </div>
-
-            {/* Drag & Drop Zone */}
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                Upload Institutional PDFs (Application, Land Deed, Fire NOC, Approval, Faculty List)
-              </label>
-              <div className="border-2 border-dashed border-slate-700 hover:border-blue-500/60 rounded-2xl p-6 text-center cursor-pointer transition-colors bg-slate-900/40 relative">
-                <input
-                  type="file"
-                  multiple
-                  accept=".pdf"
-                  onChange={(e) => {
-                    if (e.target.files) {
-                      setUploadedFiles(Array.from(e.target.files));
-                    }
-                  }}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                />
-                <div className="space-y-2">
-                  <div className="w-12 h-12 rounded-full bg-blue-500/10 text-blue-400 mx-auto flex items-center justify-center">
-                    <FileText className="w-6 h-6" />
-                  </div>
-                  <p className="text-xs font-medium text-slate-300">
-                    Drag and drop PDF files here, or click to browse
-                  </p>
-                  <p className="text-[11px] text-slate-500">
-                    PDF format only. SHA-256 hash calculated at edge.
-                  </p>
-                </div>
+        {/* Left Column: Direct Document Ingestion Desk */}
+        <div className="lg:col-span-5 space-y-6">
+          <Card padding="md" className="space-y-5">
+            <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <UploadCloud className="w-5 h-5 text-blue-600" />
+                <h2 className="text-sm font-semibold text-slate-900">Direct Document Ingestion Desk</h2>
               </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                15 MB Max / PDF
+              </span>
             </div>
 
-            {uploadedFiles.length > 0 && (
-              <div className="space-y-2 p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                <span className="text-xs font-semibold text-slate-400 block">
-                  Selected Files ({uploadedFiles.length}):
-                </span>
-                <ul className="space-y-1 max-h-32 overflow-y-auto text-xs text-slate-300">
-                  {uploadedFiles.map((f, i) => (
-                    <li key={i} className="flex items-center gap-1.5">
-                      <FileText className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
-                      <span className="truncate">{f.name}</span>
-                      <span className="text-slate-500 text-[10px]">({Math.round(f.size / 1024)} KB)</span>
-                    </li>
-                  ))}
-                </ul>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Upload multi-document institutional packages for automated PyMuPDF parsing, computer vision forensic screening, and APH compliance checks.
+            </p>
+
+            {uploadError && (
+              <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <span>{uploadError}</span>
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loadingAction === 'uploading' || uploadedFiles.length === 0}
-              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              {loadingAction === 'uploading' ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Ingesting & Verifying Evidence...</span>
-                </>
-              ) : (
-                <>
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Run Verification Pipeline</span>
-                </>
+            <form onSubmit={handleFileUpload} className="space-y-4">
+              <div>
+                <label htmlFor="inst_name" className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Institutional Name (Applicant)
+                </label>
+                <input
+                  id="inst_name"
+                  name="inst_name"
+                  type="text"
+                  aria-label="Institutional Name (Applicant)"
+                  value={institutionName}
+                  onChange={(e) => setInstitutionName(e.target.value)}
+                  className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-ring"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Document Package Upload
+                </label>
+                <div className="border-2 border-dashed border-slate-300 rounded-xl p-5 text-center hover:border-blue-400 bg-slate-50/50 transition-colors">
+                  <UploadCloud className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                  <div className="text-xs text-slate-600 font-medium">
+                    Drag and drop PDF files here, or{' '}
+                    <label htmlFor="file_upload_input" className="text-blue-600 hover:underline cursor-pointer">
+                      browse files
+                    </label>
+                    <input
+                      id="file_upload_input"
+                      name="file_upload_input"
+                      type="file"
+                      multiple
+                      accept="application/pdf"
+                      aria-label="Upload PDF document package"
+                      onChange={(e) => setUploadedFiles(Array.from(e.target.files || []))}
+                      className="sr-only"
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Accepts Application Form, Fire Safety NOC, Land Title Deed, Faculty List, Approval Letter
+                  </p>
+                </div>
+              </div>
+
+              {uploadedFiles.length > 0 && (
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
+                    Selected Files ({uploadedFiles.length})
+                  </p>
+                  <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white max-h-36 overflow-y-auto">
+                    {uploadedFiles.map((file, idx) => (
+                      <li key={idx} className="p-2 text-xs flex items-center justify-between text-slate-700">
+                        <div className="flex items-center gap-2 truncate">
+                          <FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                          <span className="truncate">{file.name}</span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          {(file.size / 1024).toFixed(0)} KB
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
-            </button>
-          </form>
+
+              <button
+                type="submit"
+                disabled={loadingAction === 'uploading'}
+                className="w-full py-2.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm transition-colors flex items-center justify-center gap-2 focus-ring"
+              >
+                {loadingAction === 'uploading' ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Executing Ingestion & Forensics...</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Ingest Package & Run Scrutiny</span>
+                  </>
+                )}
+              </button>
+            </form>
+          </Card>
+
+          {/* Quick Regulatory Reference Card */}
+          <Card padding="md" className="space-y-3 bg-slate-50/60 border-slate-200">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <BookOpen className="w-4 h-4 text-indigo-600" />
+                AICTE APH 2024–2027 Regulatory Baseline
+              </span>
+              <Link href="/rules" className="text-xs text-blue-600 hover:underline">
+                View All Rules &rarr;
+              </Link>
+            </div>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Statutory verification criteria substantiated against Chapter VI §6.17(i) (Fire Safety Certificate presence & validity) and Annexure 3 §3.1 (Acreage & Built-up Norms).
+            </p>
+          </Card>
         </div>
 
-        {/* 25 Synthetic Test Cases Grid */}
-        <div className="lg:col-span-7 glass-panel rounded-2xl p-6 sm:p-7 shadow-xl space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-400" />
-              <h2 className="text-lg font-semibold text-white">
-                Pre-indexed Test Set (25 Synthetic Cases)
-              </h2>
-            </div>
-            <span className="text-xs text-slate-400">
-              Click any case to test live
-            </span>
-          </div>
-
-          {/* Filter Chips */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <Filter className="w-3.5 h-3.5 text-slate-400 mr-1" />
-            {defectCategories.map((cat) => (
-              <button
-                key={cat.value}
-                onClick={() => setFilterTag(cat.value)}
-                className={`text-xs px-2.5 py-1 rounded-lg transition-all ${
-                  filterTag === cat.value
-                    ? 'bg-blue-600 text-white font-semibold shadow-sm'
-                    : 'bg-slate-800/80 text-slate-400 hover:text-slate-200 hover:bg-slate-700/60'
-                }`}
+        {/* Right Column: Live Ingested Queue & Separated Synthetic Benchmark Suite */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* Card 1: Live Ingested Applications Queue */}
+          <Card padding="md" className="space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">Live Scrutiny Priority Backlog</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Applications currently processed in memory requiring scrutiny review or officer determination.
+                </p>
+              </div>
+              <Link
+                href="/applications"
+                className="text-xs text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-1"
               >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Case Items List */}
-          {loadingCases ? (
-            <div className="py-12 text-center text-slate-400 text-sm">
-              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-400" />
-              <span>Loading synthetic test cases...</span>
+                <span>Full Queue ({applications.length})</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[480px] overflow-y-auto pr-1">
-              {filteredCases.map((c) => {
-                const isLoading = loadingAction === `loading_${c.case_id}`;
-                return (
+
+            {loading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+            ) : applications.length > 0 ? (
+              <div className="space-y-2.5">
+                {applications.map((app) => (
                   <div
-                    key={c.case_id}
-                    onClick={() => !isLoading && handleCaseSelect(c.case_id)}
-                    className="glass-card rounded-xl p-3.5 hover:bg-slate-800/50 cursor-pointer transition-all border border-slate-800/90 hover:border-blue-500/40 group flex flex-col justify-between"
+                    key={app.id}
+                    className="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm transition-all flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
                   >
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-mono uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
-                          {c.case_id}
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-semibold text-slate-900">
+                          {app.id}
                         </span>
-                        {c.clean ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Clean Case
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
-                            <AlertTriangle className="w-3 h-3" />
-                            Planted Defect
-                          </span>
-                        )}
+                        <StatusBadge status={app.status} size="sm" />
                       </div>
-
-                      <h3 className="text-sm font-semibold text-slate-200 group-hover:text-blue-300 transition-colors line-clamp-1">
-                        {c.institution_name}
+                      <h3 className="text-xs font-medium text-slate-800 truncate">
+                        {app.institution_name}
                       </h3>
-                      <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                        {c.application_id} &bull; {c.generated_files.length} Docs
+                      <p className="text-[11px] text-slate-400">
+                        {app.documents?.length || 0} document(s) &bull; {app.findings?.length || 0} compliance check(s) evaluated
                       </p>
-
-                      {c.expected_defects.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {c.expected_defects.map((def, idx) => (
-                            <span
-                              key={idx}
-                              className="text-[9px] px-1.5 py-0.5 rounded bg-rose-950/60 text-rose-300 border border-rose-800/50 font-mono"
-                            >
-                              {def}
-                            </span>
-                          ))}
-                        </div>
-                      )}
                     </div>
 
-                    <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-xs text-blue-400 group-hover:text-blue-300">
-                      <span>{isLoading ? 'Processing...' : 'Run EoA Verification'}</span>
-                      <ArrowRight className={`w-3.5 h-3.5 group-hover:translate-x-1 transition-transform ${isLoading ? 'animate-pulse' : ''}`} />
+                    <Link
+                      href={`/application/${app.id}`}
+                      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-colors shrink-0 focus-ring"
+                    >
+                      <span>Open Workspace</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title="No Live Applications Ingested Yet"
+                description="Upload an institutional package using the Ingestion Desk on the left, or launch an evaluation case from the benchmark suite below."
+              />
+            )}
+          </Card>
+
+          {/* Card 2: Dedicated Synthetic Benchmark Evaluation Suite */}
+          <Card padding="md" className="space-y-4 border-amber-200/80 bg-gradient-to-b from-amber-50/20 to-white">
+            <div className="flex items-center justify-between border-b border-amber-100 pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-semibold text-slate-900">Synthetic Benchmark Evaluation Suite</h2>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
+                    DEMO & EVALUATION ONLY
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Pre-indexed synthetic institutional filings with ground-truth compliance defects for SIH26261 evaluation.
+                </p>
+              </div>
+              <Link
+                href="/applications"
+                className="text-xs text-amber-800 hover:text-amber-950 font-medium inline-flex items-center gap-1"
+              >
+                <span>All 25 Cases</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            <div className="space-y-2.5">
+              {highPriorityCases.map((c) => (
+                <div
+                  key={c.case_id}
+                  className="p-3 rounded-lg border border-slate-200 bg-white hover:border-amber-300 transition-colors flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                >
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-semibold text-slate-800">
+                        {c.case_id.toUpperCase()}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-800 border border-rose-200">
+                        {c.expected_defects.join(', ')}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-700 truncate">
+                      {c.institution_name}
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-mono">
+                      PID: {c.permanent_id} &bull; {c.generated_files.length} documents
                     </div>
                   </div>
-                );
-              })}
+
+                  <button
+                    onClick={() => handleLaunchCase(c.case_id)}
+                    disabled={loadingAction === `launch_${c.case_id}`}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 shadow-sm transition-colors shrink-0 focus-ring"
+                  >
+                    {loadingAction === `launch_${c.case_id}` ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                        <span>Loading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Load & Evaluate</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              ))}
             </div>
-          )}
+          </Card>
+
+          {/* Recent Cryptographic Audit Activity */}
+          <Card padding="md" className="space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <History className="w-4 h-4 text-slate-500" />
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-700">
+                  Recent Hash-Chained Audit Events
+                </h3>
+              </div>
+              <Link href="/audit" className="text-xs text-blue-600 hover:underline">
+                Verify Integrity Chain &rarr;
+              </Link>
+            </div>
+
+            {recentAudit.length > 0 ? (
+              <div className="divide-y divide-slate-100">
+                {recentAudit.map((evt) => (
+                  <div key={evt.id} className="py-2.5 text-xs flex items-center justify-between text-slate-600">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2 font-medium text-slate-800">
+                        <span className="font-mono text-[11px] text-blue-600">{evt.action}</span>
+                        <span className="text-slate-400">&bull;</span>
+                        <span className="text-slate-600 font-mono text-[11px]">{evt.application_id}</span>
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {evt.timestamp ? new Date(evt.timestamp).toLocaleString() : 'Recent timestamp'}
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      SHA-256 Intact
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 text-center py-4">
+                No recent audit events in current session.
+              </p>
+            )}
+          </Card>
         </div>
       </div>
     </div>

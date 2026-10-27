@@ -1,0 +1,16 @@
+{
+  "case_id": "held_out_07",
+  "case_name": "Hard Defect: Fire NOC Expired by 2 Days",
+  "institution_name": "Sterling Institute of Engineering",
+  "application_date": "2025-03-15",
+  "planted_defects": [
+    "EXPIRED_CERTIFICATE"
+  ],
+  "generated_files": [
+    "application_form.pdf",
+    "approval_letter.pdf",
+    "land_document.pdf",
+    "faculty_list.pdf",
+    "fire_noc.pdf"
+  ]
+}

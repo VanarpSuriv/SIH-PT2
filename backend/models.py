@@ -28,12 +28,14 @@ class FindingStatus(str, Enum):
     PASS = "PASS"
     FAIL = "FAIL"
     FLAGGED = "FLAGGED"
+    INDETERMINATE = "INDETERMINATE"
     MANUAL_REVIEW = "MANUAL_REVIEW"
 
 class RuleCategory(str, Enum):
     STATUTORY_MANDATE = "STATUTORY_MANDATE"
     TECHNICAL_CONSISTENCY = "TECHNICAL_CONSISTENCY"
     METADATA_INTEGRITY = "METADATA_INTEGRITY"
+    FORENSIC_ADVISORY = "FORENSIC_ADVISORY"
 
 class FindingLifecycle(str, Enum):
     OPEN = "OPEN"
@@ -149,6 +151,9 @@ class Finding(BaseModel):
     rule_name: str
     rule_category: RuleCategory = RuleCategory.STATUTORY_MANDATE
     aph_reference: Optional[str] = None
+    source_section: Optional[str] = None
+    applicability_conditions: Optional[str] = None
+    supported_requirement: Optional[str] = None
     severity: Severity
     status: FindingStatus
     lifecycle: FindingLifecycle = FindingLifecycle.OPEN
@@ -178,3 +183,40 @@ class ApplicationCase(BaseModel):
     documents: List[DocumentRecord] = []
     findings: List[Finding] = []
     created_at: str
+
+class ForensicTokenDetail(BaseModel):
+    text: str
+    bbox: List[float] = Field(default_factory=list) # [x0, y0, x1, y1]
+    size_ratio: float = 1.0
+    stroke_ratio: float = 1.0
+    style_score: float = 0.0
+    style_outlier: bool = False
+
+class ForensicPageResult(BaseModel):
+    page_number: int
+    ela_mean_residual: float
+    ela_max_residual: float
+    srm_energy: float
+    copy_move_detected: bool
+    copy_move_matches: int
+    copy_move_score: float
+    blur_score: float
+    glare_ratio: float
+    qr_detected: bool = False
+    qr_payload: Optional[str] = None
+    qr_valid: Optional[bool] = None
+    qr_domain: Optional[str] = None
+    style_outliers_count: int = 0
+    token_style_outliers: List[ForensicTokenDetail] = Field(default_factory=list)
+    anomalies: List[str] = Field(default_factory=list)
+    heatmap_preview_base64: Optional[str] = None # Base64 data URI of ELA heatmap preview
+
+class DocumentForensicsResult(BaseModel):
+    document_id: str
+    filename: str = ""
+    page_count: int = 1
+    page_results: List[ForensicPageResult] = Field(default_factory=list)
+    summary_advisory: str = "PASS" # PASS, ADVISORY, REVIEW_RECOMMENDED
+    overall_score: float = 0.0 # 0.0 to 1.0 composite anomaly index
+    findings_generated: List[str] = Field(default_factory=list)
+

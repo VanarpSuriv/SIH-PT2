@@ -1,0 +1,14 @@
+{
+  "case_id": "fresh_06",
+  "case_name": "Hard Negative: Borderline Valid Land Acreage (4.02 deed vs 4.00 declared)",
+  "institution_name": "Sahyadri College of Engineering",
+  "application_date": "2025-03-15",
+  "planted_defects": [],
+  "generated_files": [
+    "application_form.pdf",
+    "approval_letter.pdf",
+    "land_document.pdf",
+    "faculty_list.pdf",
+    "fire_noc.pdf"
+  ]
+}

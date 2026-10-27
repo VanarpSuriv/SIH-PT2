@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 # Ensure root workspace is in sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
+from backend.tests.conftest import TEST_OFFICER_TOKEN
 from backend.main import app
 from backend.models import DocumentType, FindingStatus, Severity, VerificationStatus
 from backend.ingest.service import extract_pdf_data, compute_sha256
@@ -249,7 +250,11 @@ def test_fastapi_endpoints():
     assert len(img_res.content) > 1000
 
     # 6. Confirm finding with audit logging
-    conf_res = client.post(f"/api/findings/{finding_id}/confirm", data={"reviewer_notes": "Valid finding"})
+    conf_res = client.post(
+        f"/api/findings/{finding_id}/confirm",
+        data={"reviewer_notes": "Valid finding"},
+        headers={"Authorization": f"Bearer {TEST_OFFICER_TOKEN}", "X-Officer-Role": "OFFICER"}
+    )
     assert conf_res.status_code == 200
     assert conf_res.json()["user_status"] == "CONFIRMED"
 

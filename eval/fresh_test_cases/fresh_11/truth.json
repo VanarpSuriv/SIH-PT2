@@ -1,0 +1,16 @@
+{
+  "case_id": "fresh_11",
+  "case_name": "Statutory Defect: Land Area Shortfall (3.20 deed vs 5.00 declared)",
+  "institution_name": "Deccan College of Technical Studies",
+  "application_date": "2025-03-15",
+  "planted_defects": [
+    "AREA_MISMATCH"
+  ],
+  "generated_files": [
+    "application_form.pdf",
+    "approval_letter.pdf",
+    "land_document.pdf",
+    "faculty_list.pdf",
+    "fire_noc.pdf"
+  ]
+}

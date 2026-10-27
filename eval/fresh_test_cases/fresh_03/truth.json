@@ -1,0 +1,14 @@
+{
+  "case_id": "fresh_03",
+  "case_name": "Hard Negative: Benign Clock Skew (-15 min drift, within 1h threshold)",
+  "institution_name": "Kaveri Engineering Institute",
+  "application_date": "2025-03-15",
+  "planted_defects": [],
+  "generated_files": [
+    "application_form.pdf",
+    "approval_letter.pdf",
+    "land_document.pdf",
+    "faculty_list.pdf",
+    "fire_noc.pdf"
+  ]
+}

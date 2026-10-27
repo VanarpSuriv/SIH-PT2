@@ -1,0 +1,14 @@
+{
+  "case_id": "held_out_08",
+  "case_name": "Hard Negative: Fire NOC Valid at Submission (Expires 13 Days Later)",
+  "institution_name": "Trident College of Engineering",
+  "application_date": "2025-03-15",
+  "planted_defects": [],
+  "generated_files": [
+    "application_form.pdf",
+    "approval_letter.pdf",
+    "land_document.pdf",
+    "faculty_list.pdf",
+    "fire_noc.pdf"
+  ]
+}

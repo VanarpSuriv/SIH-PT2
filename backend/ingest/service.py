@@ -42,12 +42,29 @@ def extract_pdf_data(file_bytes: bytes, filename: str, application_id: str, stor
     doc_metadata = extract_pdf_metadata(file_bytes, filename)
     sha256_hash = doc_metadata.sha256_hash or compute_sha256(file_bytes)
     
-    # 2. Persist binary to storage path
+    # 2. Persist binary to storage path safely
     os.makedirs(os.path.dirname(storage_path), exist_ok=True)
     with open(storage_path, "wb") as f:
         f.write(file_bytes)
 
-    # 3. Extract page text and word bounding coordinates
+    # 3. Integrate pyHanko digital signature verification on persisted document
+    try:
+        from backend.signature.verifier import SignatureVerifier
+        sig_result = SignatureVerifier.verify_pdf(storage_path)
+        doc_metadata.is_signed = sig_result.get("has_signature", False)
+        doc_metadata.signature_details = sig_result
+        if sig_result.get("tampering_detected"):
+            doc_metadata.metadata_anomalies.append("DIGITAL_SIGNATURE_TAMPERED")
+    except Exception as sig_err:
+        # Graceful fallback if pyHanko is unable to parse non-standard signature dict
+        doc_metadata.signature_details = {
+            "has_signature": False,
+            "status": "UNSIGNED",
+            "error": str(sig_err),
+            "details": "Document does not contain standard PKCS#7 / PAdES signature dictionary."
+        }
+
+    # 4. Extract page text and word bounding coordinates
     doc = pymupdf.open(stream=file_bytes, filetype="pdf")
     page_count = doc.page_count
     pages: List[PageData] = []

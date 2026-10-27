@@ -1,0 +1,14 @@
+{
+  "case_id": "fresh_04",
+  "case_name": "Hard Negative: Legitimate Honorific Spelling (Sri vs Shri)",
+  "institution_name": "Sri Venkateswara Institute of Technology",
+  "application_date": "2025-03-15",
+  "planted_defects": [],
+  "generated_files": [
+    "application_form.pdf",
+    "approval_letter.pdf",
+    "land_document.pdf",
+    "faculty_list.pdf",
+    "fire_noc.pdf"
+  ]
+}

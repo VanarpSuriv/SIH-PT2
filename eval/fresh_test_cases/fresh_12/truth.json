@@ -1,0 +1,16 @@
+{
+  "case_id": "fresh_12",
+  "case_name": "Advisory Flag: META-001 Temporal Sequence Inversion (-180 days)",
+  "institution_name": "Aravalli Academy of Technology",
+  "application_date": "2025-03-15",
+  "planted_defects": [
+    "METADATA_ANOMALY"
+  ],
+  "generated_files": [
+    "application_form.pdf",
+    "approval_letter.pdf",
+    "land_document.pdf",
+    "faculty_list.pdf",
+    "fire_noc.pdf"
+  ]
+}

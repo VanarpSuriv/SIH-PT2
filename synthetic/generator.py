@@ -5,7 +5,9 @@ Generates 25 test cases across 5 document types with planted defects.
 import os
 import json
 import random
+from datetime import datetime, timedelta
 from typing import Dict, List, Any
+import pymupdf
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -472,6 +474,30 @@ def generate_cases() -> None:
             fpath = os.path.join(case_dir, "faculty_list.pdf")
             create_faculty_list_pdf(fpath, data)
             generated_files.append("faculty_list.pdf")
+
+        # Set consistent pre-filing metadata on generated files matching application timeline
+        try:
+            app_dt = datetime.strptime(app_date, "%Y-%m-%d")
+        except Exception:
+            app_dt = datetime(2025, 3, 15)
+        pre_filing_dt = app_dt - timedelta(days=5, hours=2)
+        norm_ts = f"D:{pre_filing_dt.strftime('%Y%m%d%H%M%S')}+05'30'"
+        for gf in generated_files:
+            gpath = os.path.join(case_dir, gf)
+            try:
+                pdoc = pymupdf.open(gpath)
+                pdoc.set_metadata({
+                    "producer": "VERITAS AICTE Platform v2025.1",
+                    "creator": "Institutional Regulatory Filing Suite",
+                    "creationDate": norm_ts,
+                    "modDate": norm_ts
+                })
+                tmp_gpath = gpath + ".tmp.pdf"
+                pdoc.save(tmp_gpath)
+                pdoc.close()
+                os.replace(tmp_gpath, gpath)
+            except Exception:
+                pass
 
         # Ground truth
         truth = {

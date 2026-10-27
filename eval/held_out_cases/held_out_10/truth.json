@@ -1,0 +1,15 @@
+{
+  "case_id": "held_out_10",
+  "case_name": "Hard Defect: Missing Fire Safety Clearance Certificate",
+  "institution_name": "Vanguard Engineering College",
+  "application_date": "2025-03-15",
+  "planted_defects": [
+    "MISSING_DOCUMENT"
+  ],
+  "generated_files": [
+    "application_form.pdf",
+    "approval_letter.pdf",
+    "land_document.pdf",
+    "faculty_list.pdf"
+  ]
+}

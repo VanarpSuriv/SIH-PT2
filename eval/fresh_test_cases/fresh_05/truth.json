@@ -1,0 +1,14 @@
+{
+  "case_id": "fresh_05",
+  "case_name": "Hard Negative: Fire NOC Valid at Filing (Expires 2025-06-30)",
+  "institution_name": "Amity Technical Campus",
+  "application_date": "2025-03-15",
+  "planted_defects": [],
+  "generated_files": [
+    "application_form.pdf",
+    "approval_letter.pdf",
+    "land_document.pdf",
+    "faculty_list.pdf",
+    "fire_noc.pdf"
+  ]
+}
