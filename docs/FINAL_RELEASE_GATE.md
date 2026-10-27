@@ -80,7 +80,7 @@ It is **NOT YET CLEARED FOR UNRESTRICTED PRODUCTION DEPLOYMENT** across public A
 ### A. Backend Unit & Integration Tests (pytest)
 ```text
 Command: .venv\Scripts\pytest backend/tests/ -v
-Result: 40 passed, 1 warning in 31.16s
+Result: 40 passed, 1 warning in 18.39s
 
 Test Modules:
   • backend/tests/test_forensics.py: 16 passed
@@ -139,14 +139,20 @@ Output:
    ✓ Compiled successfully
    Linting and checking validity of types ...
    Collecting page data ...
-   ✓ Generating static pages (4/4)
+   ✓ Generating static pages (9/9)
    Finalizing page optimization ...
+   Collecting build traces ...
 
 Routes Generated:
-   ┌ ○ /                                      4.8 kB         92.1 kB
-   ├ ○ /_not-found                            873 B          88.2 kB
-   ├ ƒ /application/[id]                      6.46 kB         102 kB
-   └ ƒ /application/[id]/finding/[findingId]  8.17 kB         104 kB
+   ┌ ○ /                                      7.89 kB         105 kB
+   ├ ○ /_not-found                            873 B          88.1 kB
+   ├ ƒ /application/[id]                      6.72 kB         106 kB
+   ├ ƒ /application/[id]/finding/[findingId]  6.13 kB         106 kB
+   ├ ○ /applications                          4.67 kB         104 kB
+   ├ ○ /audit                                 6.14 kB         103 kB
+   ├ ○ /forensics                             2.84 kB         103 kB
+   ├ ○ /icon.svg                              0 B                0 B
+   └ ○ /rules                                 6.18 kB        93.4 kB
    + First Load JS shared by all              87.3 kB
 ```
 
