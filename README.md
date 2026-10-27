@@ -19,12 +19,13 @@
 * Distinct separation of statutory mandates from technical consistency checks (`AICTE-EOA-007` entity resolution, `AICTE-EOA-008` PID check) and advisory metadata checks.
 
 ### 2. High-Speed Local Computer Vision Forensics (<80ms per page on CPU)
-* **Error Level Analysis (ELA)**: Fixed-quality JPEG re-encoding (`quality=90`, `scale=15.0`) exposes localized graphic splicing, rendered via an interactive Inferno colormap heatmap overlay.
-* **Spatial Rich Model (SRM) Steganalysis**: 3 classic Fridrich & Kodovsky 5x5 high-pass kernels expose high-frequency noise discrepancies without requiring machine learning model weights.
-* **SIFT + FLANN + RANSAC Copy-Move Detection**: Detects cloned institutional stamps, seals, and duplicated signatures using keypoint self-matching ($k=3$) and geometric inlier verification.
-* **Typography Style Outlier Detection**: Otsu binarization and `cv2.distanceTransform` calculate token stroke width and character height, flagging bolded or oversized altered numbers/dates.
-* **Scan Quality Gating**: Laplacian blur variance (<80.0) and HSV V-channel glare ratio (>15%) identify compromised uploads.
-* **Offline 2D QR Code Verification & SSRF Defense**: Locally decodes approval letter QR codes via OpenCV, verifies official regulatory domains (`aicte-india.org`, `*.gov.in`), and blocks loopback, private RFC 1918 subnets, and cloud metadata IPs (`169.254.169.254`).
+* **Preliminary Forensic Indicators**: Multi-signal image analysis provides screening alerts for human scrutiny, never autonomous or conclusive proof of document alteration:
+  * **Error Level Analysis (ELA)**: Fixed-quality JPEG re-encoding (`quality=90`, `scale=15.0`) exposes localized compression history differences, rendered via an interactive Inferno colormap heatmap overlay.
+  * **Spatial Rich Model (SRM) Steganalysis**: 3 classic Fridrich & Kodovsky 5x5 high-pass kernels expose spatial noise residual discrepancies without requiring machine learning model weights.
+  * **SIFT + FLANN + RANSAC Copy-Move Detection**: Identifies duplicated institutional stamps, seals, and repeated signatures using keypoint self-matching ($k=3$) and geometric inlier verification.
+  * **Typography Style Outlier Detection**: Otsu binarization and `cv2.distanceTransform` calculate token stroke width and character height, flagging altered numbers or dates deviating from body text.
+  * **Scan Quality Gating**: Laplacian blur variance (<80.0) and HSV V-channel glare ratio (>15%) identify compromised uploads without alerting on clean digital blank pages.
+  * **Offline 2D QR Code Verification & SSRF Defense**: Locally decodes approval letter QR codes via OpenCV with zero network requests, verifies official regulatory domains (`aicte-india.org`, `*.gov.in`), and blocks loopback, private RFC 1918 subnets, and cloud metadata IPs (`169.254.169.254`).
 
 ### 3. Cryptographic Tamper-Evident Audit Trail
 * Every ingestion, rule evaluation, external registry check, and human officer review is linked in a SHA-256 hash chain:
@@ -63,6 +64,10 @@ $env:NEXT_PUBLIC_OFFICER_TOKEN = "demo-sih-2026-officer-token"
 npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+> [!NOTE]
+> **Local Demo Security Boundary**:
+> `NEXT_PUBLIC_OFFICER_TOKEN` is compiled directly into browser client code and is treated as publicly accessible. In the local demonstration environment, authentication relies on a shared bearer token (`OFFICER_AUTH_TOKEN`) with client-asserted classification headers (`X-Officer-Role`), which is not an individual cryptographic identity. The backend strictly enforces authorization independently of frontend UI visibility. Production deployments must transition to OAuth2/OIDC PKCE single sign-on (Parichay/DigiLocker SSO) storing session credentials in `HttpOnly` cookies.
 
 ---
 

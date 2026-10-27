@@ -40,7 +40,7 @@ Open browser at: `http://localhost:3000`
 
 ### Step 1: Ingest & Integrity Gating
 1. Navigate to `http://localhost:3000`.
-2. Upload the sample document package from `synthetic/cases/case_01/`:
+2. Upload the sample synthetic document package from `synthetic/cases/case_01/` *(simulated institutional filing for local demonstration)*:
    - `application_form.pdf`
    - `approval_letter.pdf`
    - `land_document.pdf`
@@ -71,22 +71,24 @@ Open browser at: `http://localhost:3000`
      - `AICTE-EOA-009`: Land Area Adequacy (Annexure 3 §3.1).
    - **Technical Consistency**: `AICTE-EOA-007` (Entity resolution), `AICTE-EOA-008` (PID check), `AICTE-EOA-006` (Prior year approval order reconciliation).
    - **Metadata Integrity**: `META-001` (ModDate earlier than CreationDate), `META-002` (Creation postdates filing), `META-003` (Parser warnings).
-2. Note that metadata review flags explicitly state: *"Flagged for technical inspection; does not constitute proof of document forgery."*
+   - **Simulated External Registry Checks**: Note that external registry verification queries local demo fixtures (`fake_issuers.json`). Disconnected or unseeded registries yield `INDETERMINATE` without creating applicant compliance defects.
+2. Note that metadata and forensic review flags explicitly state: *"Flagged for technical inspection; does not constitute proof of document forgery."*
 
 ---
 
-### Step 4: Computer Vision Forensics & Steganalysis (The Best of Six Projects)
+### Step 4: Computer Vision Forensics & Steganalysis (Preliminary Forensic Screening)
 1. Click on any finding to open the **Evidence Detail Inspector**.
 2. Notice the **View Mode Toggle**:
    - **Evidence Box**: Renders PyMuPDF highlighted bounding boxes on the original page.
-   - **ELA Heatmap**: Renders the **Inferno Error Level Analysis Heatmap**, exposing differential JPEG compression histories.
-3. Observe the **Computer Vision Forensics Diagnostics Card**:
+   - **ELA Heatmap**: Renders the **Inferno Error Level Analysis Heatmap**, exposing differential JPEG compression histories as candidate regions for inspection.
+3. Observe the **Computer Vision Forensics Diagnostics Card** *(Preliminary Screening Indicators)*:
    - **Mean ELA Residual**: Quantifies localized compression variations.
    - **SRM Steganalysis Energy**: Measures high-frequency noise from Fridrich & Kodovsky 5x5 filters.
    - **Copy-Move Cloned Features**: Displays SIFT + FLANN + RANSAC geometric matches detecting duplicated stamps, seals, or signatures.
    - **Typography Outliers**: Lists short text tokens whose font stroke or height deviates by >30% from dominant body text using Otsu distance transform.
    - **Scan Quality Gating**: Laplacian blur score and HSV glare ratio warn officers of illegible uploads without false alarms on blank pages.
    - **2D QR Code Verification**: Decodes QR barcodes 100% offline with zero outbound network requests; verifies against official `aicte-india.org` / `gov.in` whitelist and strictly blocks SSRF probes (loopback, private subnets, cloud metadata, credentials in URLs, unusual ports).
+   - **Advisory Boundary**: Emphasize to evaluators that computer vision detectors serve as advisory screening indicators for human officer scrutiny, never autonomous legal proof of alteration.
 
 ---
 

@@ -216,7 +216,7 @@ Before transitioning from Hackathon Demonstration to an official nation-wide AIC
    - *Current State*: External registries are simulated offline via `fake_issuers.json`.
    - *Production Requirement*: Replace the mock adapter with authenticated REST/gRPC client integrations to the live AICTE Central Portal, State Land/Revenue Portals, and State Fire Services APIs.
 
-3. **Distributed Immutable Audit Logging**:
+3. **Distributed Append-Only / WORM Audit Logging**:
    - *Current State*: SHA-256 hash chaining stored in local SQLite (`audit_trail.db`). Provides tamper-evidence, but an adversary with root server access could alter files.
    - *Production Requirement*: Forward audit event hashes to an append-only remote ledger, Write-Once-Read-Many (WORM) storage, or an RFC 3161 compliant Trusted Timestamping Authority (TSA).
 
