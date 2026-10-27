@@ -2,11 +2,11 @@
 
 [![Smart India Hackathon 2026](https://img.shields.io/badge/SIH-2026-blue.svg)](https://sih.gov.in)
 [![Problem Statement](https://img.shields.io/badge/Problem%20Statement-SIH26261-orange.svg)](https://sih.gov.in)
-[![Backend Tests](https://img.shields.io/badge/Backend%20Tests-32%2F32%20Passing-brightgreen.svg)]()
+[![Backend Tests](https://img.shields.io/badge/Backend%20Tests-40%2F40%20Passing-brightgreen.svg)]()
 [![Next.js Frontend](https://img.shields.io/badge/Frontend-Next.js%2014%20App%20Router-black.svg)]()
 [![Forensic Execution](https://img.shields.io/badge/Forensics%20Latency-%3C80ms%20%2F%20page-success.svg)]()
 
-> **VERITAS** is an explainable, evidence-driven AICTE Extension of Approval (EoA) verification platform. It automates regulatory document validation, extracts exact coordinate-grounded evidence, runs CPU-bounded computer vision forensics (Error Level Analysis, Steganalysis, Copy-Move detection), and immutably logs every officer determination to a cryptographic SHA-256 hash chain.
+> **VERITAS** is an explainable, evidence-driven AICTE Extension of Approval (EoA) verification platform. It automates regulatory document validation, extracts exact coordinate-grounded evidence, runs CPU-bounded computer vision forensics (Error Level Analysis, Steganalysis, Copy-Move detection), and tamper-evidently logs every officer determination to a cryptographic SHA-256 hash chain.
 
 ---
 
@@ -49,17 +49,17 @@ python -m venv .venv
 pip install -r backend/requirements.txt
 pip install opencv-python
 
-# Set environment variables and launch FastAPI
-$env:OFFICER_AUTH_TOKEN = "your-secure-officer-token"
+# Set environment variables and launch FastAPI (strictly bind to localhost for demo security)
+$env:OFFICER_AUTH_TOKEN = "demo-sih-2026-officer-token"
 $env:ENABLE_DEMO_TAMPER = "true"
-uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 ### 2. Frontend Setup
 ```powershell
 cd frontend
 npm install
-$env:NEXT_PUBLIC_OFFICER_TOKEN = "your-secure-officer-token"
+$env:NEXT_PUBLIC_OFFICER_TOKEN = "demo-sih-2026-officer-token"
 npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser.
@@ -68,7 +68,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🧪 Testing & Verification
 
-Run the full automated test suite (32 unit & integration tests):
+Run the full automated test suite (40 unit & integration tests):
 ```powershell
 .venv\Scripts\pytest backend/tests/ -v
 ```
@@ -88,6 +88,7 @@ python eval/evaluate.py
 ## 📚 Technical Documentation
 
 Detailed architecture reports and runbooks are available in the [`docs/`](docs/) directory:
+* [Final Release Gate (`docs/FINAL_RELEASE_GATE.md`)](docs/FINAL_RELEASE_GATE.md): Final release audit, verified test evidence, security boundaries, and production roadmap.
 * [Source Project Audit (`docs/SOURCE_PROJECT_AUDIT.md`)](docs/SOURCE_PROJECT_AUDIT.md): Detailed comparative audit of the 6 cloned reference projects.
 * [Integration Decisions (`docs/INTEGRATION_DECISIONS.md`)](docs/INTEGRATION_DECISIONS.md): Architectural decisions and selection/rejection rationale.
 * [Threat Model (`docs/THREAT_MODEL.md`)](docs/THREAT_MODEL.md): Attack surface analysis, path traversal mitigations, SSRF defenses, and role authorization.
