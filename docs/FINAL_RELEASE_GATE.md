@@ -68,10 +68,14 @@ It is **NOT YET CLEARED FOR UNRESTRICTED PRODUCTION DEPLOYMENT** across public A
 | **Path Traversal Containment** | Arbitrary file write / overwrite outside upload root | `pathlib.Path.resolve().is_relative_to(storage_root)` strictly checked on every upload; blocks `../` and sibling directory attacks. |
 | **Fail-Closed Officer Auth** | Unauthenticated review actions / forged roles | Server rejects unauthenticated requests with `HTTP 401`. Fails closed with `HTTP 500` if `OFFICER_AUTH_TOKEN` is unconfigured. |
 | **Constant-Time Verification** | Timing side-channel attacks on tokens | `secrets.compare_digest(provided_token, expected_token)` enforces timing-invariant comparison. |
-| **Role Enforcement** | Unauthorized role submission | `X-Officer-Role` is validated against `VALID_OFFICER_ROLES`; unauthorized roles rejected with `HTTP 403`. |
+| **Role Enforcement** | Unauthorized role submission | `X-Officer-Role` is validated against `VALID_OFFICER_ROLES`; unauthorized roles rejected with `HTTP 403`. *(Note: In local demo mode, the shared bearer token is not bound to individual user identities; `X-Officer-Role` provides operational classification within permitted roles rather than multi-tenant production RBAC).* |
 | **Demo Tamper Isolation** | Unauthorized audit ledger manipulation | `/api/audit/tamper` is strictly disabled by default (`ENABLE_DEMO_TAMPER=false`), requires officer authentication, and requires explicit `X-Demo-Mode: true`. |
 | **SSRF & Network Isolation** | Cloud metadata / intranet probing via QR | QR verification runs 100% offline; payload validator blocks RFC 1918, loopback, cloud metadata (`169.254.169.254`), non-standard ports, and non-HTTP schemes. |
 | **Upload Boundary Validation** | Decompression bombs, non-PDF payloads | Enforces 15 MB limit, verifies `%PDF-` magic header bytes, and sanitizes filenames. |
+
+> [!NOTE]
+> **Local Demo Authorization vs. Production RBAC**:
+> In the local demonstration environment, authentication relies on a shared bearer token (`OFFICER_AUTH_TOKEN`). The server verifies that the token is present, valid, and that the client's asserted `X-Officer-Role` is within `VALID_OFFICER_ROLES = {"OFFICER", "SCRUTINY_COMMITTEE", "AICTE_ADMIN", "REGIONAL_OFFICER", "INSPECTOR", "REVIEWER"}`. However, because the demo token is shared, changing `X-Officer-Role` to another valid role does not require a distinct cryptographic user identity. The backend strictly enforces this boundary against unauthenticated requests (HTTP 401) and unwhitelisted roles (HTTP 403), but production deployments must replace client-asserted role headers with cryptographically signed identity tokens (JWTs) issued by an enterprise IdP (e.g., Parichay / DigiLocker SSO).
 
 ---
 
@@ -204,8 +208,9 @@ Result: {'status': 'ok', 'timestamp': '2026-10-25T22:00:41.149179+00:00', 'servi
 Before transitioning from Hackathon Demonstration to an official nation-wide AICTE Production deployment, the following four items must be addressed:
 
 1. **Authentication Architecture (`NEXT_PUBLIC_*` Migration)**:
-   - *Current State*: Local demo uses `OFFICER_AUTH_TOKEN` with client transmission.
-   - *Production Requirement*: Replace with OAuth2 / OIDC PKCE single sign-on (SSO) integrated with the AICTE National Portal (or Parichay / DigiLocker Single Sign-On), storing session credentials in `HttpOnly`, `Secure`, `SameSite=Strict` cookies.
+   - *Current State*: Local demo uses `OFFICER_AUTH_TOKEN` with client transmission via `NEXT_PUBLIC_OFFICER_TOKEN`.
+   - *Public Exposure Disclosure*: `NEXT_PUBLIC_*` variables are compiled directly into the client JavaScript bundle and are completely browser-visible. They must never be treated as secrets or production credentials. The backend strictly enforces authorization independently of whether frontend buttons are visible or hidden.
+   - *Production Requirement*: Replace with OAuth2 / OIDC PKCE single sign-on (SSO) integrated with the AICTE National Portal (or Parichay / DigiLocker Single Sign-On), storing session credentials in `HttpOnly`, `Secure`, `SameSite=Strict` cookies with cryptographically signed user claims.
 
 2. **Live External Authority Integrations**:
    - *Current State*: External registries are simulated offline via `fake_issuers.json`.
