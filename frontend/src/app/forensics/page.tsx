@@ -29,7 +29,7 @@ interface ApplicationCase {
   findings: { id: string; rule_id: string; rule_category?: string; claim: string; severity: string }[];
 }
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = '/api';
 
 /**
  * Forensic Diagnostics Overview Screen:
@@ -47,7 +47,7 @@ export default function ForensicsOverviewPage() {
   const fetchApplications = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/api/applications`);
+      const res = await fetch(`${API_BASE}/applications`);
       if (res.ok) {
         const data = await res.json();
         setApplications(data);

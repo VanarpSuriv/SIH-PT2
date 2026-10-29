@@ -42,7 +42,7 @@ interface ChainVerificationResponse {
   actual_hash?: string;
 }
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = '/api';
 const DEMO_OFFICER_TOKEN = process.env.NEXT_PUBLIC_OFFICER_TOKEN || 'demo-sih-2026-officer-token';
 
 /**
@@ -77,7 +77,7 @@ export default function AuditTrailPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`${API_BASE}/api/audit`);
+      const res = await fetch(`${API_BASE}/audit`);
       if (!res.ok) throw new Error('Failed to load audit trail events');
       const data: AuditEvent[] = await res.json();
       setEvents(data);
@@ -91,7 +91,7 @@ export default function AuditTrailPage() {
   const handleVerifyChain = async () => {
     try {
       setVerifying(true);
-      const res = await fetch(`${API_BASE}/api/audit/verify`);
+      const res = await fetch(`${API_BASE}/audit/verify`);
       if (!res.ok) throw new Error('Verification request failed');
       const data: ChainVerificationResponse = await res.json();
       setVerificationResult(data);
@@ -116,7 +116,7 @@ export default function AuditTrailPage() {
       const formData = new FormData();
       formData.append('event_id', targetEventId);
 
-      const res = await fetch(`${API_BASE}/api/audit/tamper`, {
+      const res = await fetch(`${API_BASE}/audit/tamper`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${DEMO_OFFICER_TOKEN}`,

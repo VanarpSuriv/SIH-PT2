@@ -128,7 +128,7 @@ interface Finding {
   created_at: string;
 }
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = '/api';
 const DEMO_OFFICER_TOKEN = process.env.NEXT_PUBLIC_OFFICER_TOKEN || 'demo-sih-2026-officer-token';
 
 /**
@@ -185,7 +185,7 @@ export default function FindingDetailPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`${API_BASE}/api/findings/${findingId}`);
+      const res = await fetch(`${API_BASE}/findings/${findingId}`);
       if (!res.ok) throw new Error('Failed to retrieve finding details');
       const data: Finding = await res.json();
       setFinding(data);
@@ -209,7 +209,7 @@ export default function FindingDetailPage() {
   const loadDocumentForensics = async (docId: string) => {
     try {
       setLoadingForensics(true);
-      const res = await fetch(`${API_BASE}/api/documents/${docId}/forensics`);
+      const res = await fetch(`${API_BASE}/documents/${docId}/forensics`);
       if (res.ok) {
         const forensicData = await res.json();
         setForensicResult(forensicData);
@@ -259,7 +259,7 @@ export default function FindingDetailPage() {
       setActionLoading(true);
       setAuditMessage(null);
 
-      const res = await fetch(`${API_BASE}/api/findings/${finding.id}/review`, {
+      const res = await fetch(`${API_BASE}/findings/${finding.id}/review`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -442,7 +442,7 @@ export default function FindingDetailPage() {
               {viewMode === 'EVIDENCE' ? (
                 <img
                   key={`evidence_${imageReloadKey}_${selectedFieldIdx}`}
-                  src={`${API_BASE}/api/findings/${finding.id}/evidence_image?field_idx=${selectedFieldIdx}&t=${imageReloadKey}`}
+                  src={`${API_BASE}/findings/${finding.id}/evidence_image?field_idx=${selectedFieldIdx}&t=${imageReloadKey}`}
                   alt={`Highlighted evidence for ${finding.rule_id}`}
                   className="max-w-full h-auto rounded-lg shadow-sm border border-slate-300 bg-white"
                 />

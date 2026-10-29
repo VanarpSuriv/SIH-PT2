@@ -46,7 +46,7 @@ interface ApplicationCase {
   findings: any[];
 }
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = '/api';
 
 /**
  * Application Queue screen: A high-density, searchable, filterable operational table
@@ -78,8 +78,8 @@ export default function ApplicationQueuePage() {
       setLoading(true);
       setError(null);
       const [casesRes, appsRes] = await Promise.allSettled([
-        fetch(`${API_BASE}/api/cases`),
-        fetch(`${API_BASE}/api/applications`)
+        fetch(`${API_BASE}/cases`),
+        fetch(`${API_BASE}/applications`)
       ]);
 
       if (casesRes.status === 'fulfilled' && casesRes.value.ok) {
@@ -101,7 +101,7 @@ export default function ApplicationQueuePage() {
   const handleLaunchCase = async (caseId: string) => {
     try {
       setLoadingCaseId(caseId);
-      const res = await fetch(`${API_BASE}/api/cases/${caseId}/load`, {
+      const res = await fetch(`${API_BASE}/cases/${caseId}/load`, {
         method: 'POST',
       });
       if (!res.ok) throw new Error('Failed to load application case');

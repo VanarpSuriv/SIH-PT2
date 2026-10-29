@@ -115,7 +115,7 @@ interface ApplicationCase {
   findings: Finding[];
 }
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = '/api';
 
 /**
  * Application Workspace Page: Comprehensive scrutiny center providing
@@ -153,7 +153,7 @@ export default function ApplicationDetailPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`${API_BASE}/api/applications/${appId}`);
+      const res = await fetch(`${API_BASE}/applications/${appId}`);
       if (!res.ok) throw new Error('Failed to retrieve application case details.');
       const data = await res.json();
       setAppCase(data);
@@ -167,7 +167,7 @@ export default function ApplicationDetailPage() {
 
   const loadAuditEvents = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/audit?application_id=${appId}`);
+      const res = await fetch(`${API_BASE}/audit?application_id=${appId}`);
       if (res.ok) {
         const events = await res.json();
         setAuditEvents(events);
@@ -180,7 +180,7 @@ export default function ApplicationDetailPage() {
   const verifyAuditChain = async () => {
     try {
       setVerifyingChain(true);
-      const res = await fetch(`${API_BASE}/api/audit/verify`);
+      const res = await fetch(`${API_BASE}/audit/verify`);
       if (res.ok) {
         const result = await res.json();
         setChainVerification(result);

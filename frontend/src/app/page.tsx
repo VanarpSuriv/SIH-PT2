@@ -65,7 +65,7 @@ interface AuditEventItem {
   payload: Record<string, any>;
 }
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = '/api';
 
 /**
  * Overview Dashboard answering the core operational questions:
@@ -100,9 +100,9 @@ export default function OverviewPage() {
 
       // Concurrent fetch of cases, applications, and audit events
       const [casesRes, appsRes, auditRes] = await Promise.allSettled([
-        fetch(`${API_BASE}/api/cases`),
-        fetch(`${API_BASE}/api/applications`),
-        fetch(`${API_BASE}/api/audit`)
+        fetch(`${API_BASE}/cases`),
+        fetch(`${API_BASE}/applications`),
+        fetch(`${API_BASE}/audit`)
       ]);
 
       if (casesRes.status === 'fulfilled' && casesRes.value.ok) {
@@ -120,7 +120,7 @@ export default function OverviewPage() {
         setRecentAudit(data.slice(-5).reverse());
       }
     } catch (err: any) {
-      setError('Unable to connect to verification backend service at 127.0.0.1:8000');
+      setError('Unable to connect to the verification backend service.');
     } finally {
       setLoading(false);
     }
@@ -130,7 +130,7 @@ export default function OverviewPage() {
     try {
       setLoadingAction(`launch_${caseId}`);
       setUploadError(null);
-      const res = await fetch(`${API_BASE}/api/cases/${caseId}/load`, {
+      const res = await fetch(`${API_BASE}/cases/${caseId}/load`, {
         method: 'POST',
       });
       if (!res.ok) throw new Error('Failed to load application case package');
@@ -158,7 +158,7 @@ export default function OverviewPage() {
         formData.append('files', file);
       });
 
-      const res = await fetch(`${API_BASE}/api/upload`, {
+      const res = await fetch(`${API_BASE}/upload`, {
         method: 'POST',
         body: formData,
       });

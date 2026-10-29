@@ -249,7 +249,7 @@ export function AppShell({ children }: AppShellProps) {
 
             <div className="flex items-center gap-2 text-xs text-slate-600">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span className="font-medium text-slate-700">Service Online (127.0.0.1:8000)</span>
+              <span className="font-medium text-slate-700">Service Online (Backend)</span>
             </div>
           </div>
         </header>

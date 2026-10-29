@@ -42,7 +42,7 @@ interface RulesResponse {
   rules: RuleDefinition[];
 }
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = '/api';
 
 /**
  * Regulatory Rules Matrix Screen:
@@ -67,7 +67,7 @@ export default function RegulatoryRulesPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`${API_BASE}/api/rules`);
+      const res = await fetch(`${API_BASE}/rules`);
       if (!res.ok) throw new Error('Failed to load regulatory rules matrix');
       const data: RulesResponse = await res.json();
       setRulesData(data);
