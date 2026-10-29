@@ -8,6 +8,13 @@ const HOP_BY_HOP_HEADERS = new Set([
   'content-length',
   'accept-encoding',
   'transfer-encoding',
+  'expect',
+  'keep-alive',
+  'te',
+  'trailer',
+  'upgrade',
+  'proxy-connection',
+  'via',
 ]);
 
 async function proxyToBackend(request: NextRequest, params: { path: string[] }) {
@@ -19,7 +26,7 @@ async function proxyToBackend(request: NextRequest, params: { path: string[] }) 
     );
   }
 
-  const backendPath = `/${params.path.join('/')}`;
+  const backendPath = `/api/${params.path.join('/')}`;
   const url = new URL(backendPath + request.nextUrl.search, backendBaseUrl);
 
   const headers = new Headers();
@@ -34,9 +41,12 @@ async function proxyToBackend(request: NextRequest, params: { path: string[] }) 
   const hasBody = request.method !== 'GET' && request.method !== 'HEAD';
   if (hasBody) {
     const contentType = request.headers.get('content-type') || '';
-    body = contentType.includes('multipart/form-data')
-      ? await request.formData()
-      : await request.arrayBuffer();
+    if (contentType.includes('multipart/form-data')) {
+      body = await request.formData();
+      headers.delete('content-type');
+    } else {
+      body = await request.arrayBuffer();
+    }
   }
 
   const upstream = await fetch(url, {
@@ -57,7 +67,8 @@ async function proxyToBackend(request: NextRequest, params: { path: string[] }) 
 export async function GET(request: NextRequest, { params }: { params: { path: string[] } }) {
   try {
     return await proxyToBackend(request, params);
-  } catch {
+  } catch (error) {
+    console.error('[api-bridge]', error);
     return NextResponse.json({ detail: 'Backend service request failed.' }, { status: 502 });
   }
 }
@@ -65,7 +76,8 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
 export async function POST(request: NextRequest, { params }: { params: { path: string[] } }) {
   try {
     return await proxyToBackend(request, params);
-  } catch {
+  } catch (error) {
+    console.error('[api-bridge]', error);
     return NextResponse.json({ detail: 'Backend service request failed.' }, { status: 502 });
   }
 }

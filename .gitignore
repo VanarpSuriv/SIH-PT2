@@ -15,4 +15,7 @@ backend/audit/*.db
 .env.*.local
 frontend/.env.local
 frontend/.env.*.local
+.vercel/
+*.log
+*_dev.err
 
